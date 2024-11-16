@@ -22,6 +22,7 @@
 #include "stm32f1xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "motor.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -41,7 +42,10 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
-
+uint8_t RmtSta=0;
+uint16_t Dval;
+uint32_t RmtRec=0;
+uint8_t RmtCnt=0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -55,6 +59,7 @@
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
+extern TIM_HandleTypeDef htim3;
 extern TIM_HandleTypeDef htim4;
 extern TIM_HandleTypeDef htim5;
 /* USER CODE BEGIN EV */
@@ -256,6 +261,20 @@ void EXTI9_5_IRQHandler(void)
 }
 
 /**
+  * @brief This function handles TIM3 global interrupt.
+  */
+void TIM3_IRQHandler(void)
+{
+  /* USER CODE BEGIN TIM3_IRQn 0 */
+
+  /* USER CODE END TIM3_IRQn 0 */
+  HAL_TIM_IRQHandler(&htim3);
+  /* USER CODE BEGIN TIM3_IRQn 1 */
+
+  /* USER CODE END TIM3_IRQn 1 */
+}
+
+/**
   * @brief This function handles TIM4 global interrupt.
   */
 void TIM4_IRQHandler(void)
@@ -290,11 +309,121 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
   switch (GPIO_Pin)
   {
   case KEY1_Pin:
-    
+    if(HAL_GPIO_ReadPin(KEY1_GPIO_Port, KEY1_Pin) == GPIO_PIN_RESET){
+      int T;
+      for(T=7;T>=0;--T){
+        HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, (RmtSta&(1<<T))>>T);
+        HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, !((RmtSta&(1<<T))>>T));
+        HAL_Delay(300);
+      }
+    }
+    while(HAL_GPIO_ReadPin(KEY1_GPIO_Port, KEY1_Pin) == GPIO_PIN_RESET);
+    break;
+  case KEY2_Pin:
+    if(HAL_GPIO_ReadPin(KEY2_GPIO_Port, KEY2_Pin) == GPIO_PIN_RESET){
+      int T;
+      for(T=15;T>=0;--T){
+        HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, (Dval&(1<<T))>>T);
+        HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, !((Dval&(1<<T))>>T));
+        HAL_Delay(300);
+      }
+    }
+    while(HAL_GPIO_ReadPin(KEY2_GPIO_Port, KEY2_Pin) == GPIO_PIN_RESET);
+    break;
+  case KEY3_Pin:
+    if(HAL_GPIO_ReadPin(KEY3_GPIO_Port, KEY3_Pin) == GPIO_PIN_SET){
+      int T;
+      for(T=31;T>=0;--T){
+        HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, (RmtRec&(1<<T))>>T);
+        HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, !((RmtRec&(1<<T))>>T));
+        HAL_Delay(300);
+      }
+    }
+    while(HAL_GPIO_ReadPin(KEY3_GPIO_Port, KEY3_Pin) == GPIO_PIN_SET);
     break;
   
   default:
     break;
+  }
+}
+
+/* RmtSta:
+  [8:8] is receiving 0x80
+  [7:7] is reveived  0x40
+  [5:5] rising/falling capture 0x10
+  [4:0] timer for timeout
+*/
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+  if (htim->Instance == TIM5)	// 判断是定时器5发生中断
+  {
+    if(RmtSta & 0x80){
+      RmtSta &= ~0x10;
+      if((RmtSta & 0x0f) == 0x00) RmtSta |= 0x40;
+      if((RmtSta & 0x0f) < 0x0e){
+        ++RmtSta;
+      } else {
+        RmtSta &= ~0x80;
+        RmtSta &= 0xf0;
+      }
+    }
+  }
+}
+
+void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
+{
+  if (htim->Instance == TIM5)	// 判断是定时器5发生中断
+  {
+    if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2)  // Make sure this is for CC2
+    {
+      if((RmtSta & 0x10) == 0){
+        RmtSta |= 0x10;
+        __HAL_TIM_DISABLE(&htim5);
+        __HAL_TIM_SetCounter(&htim5, 0);
+        TIM_RESET_CAPTUREPOLARITY(&htim5, TIM_CHANNEL_2);
+        TIM_SET_CAPTUREPOLARITY(&htim5, TIM_CHANNEL_2, TIM_ICPOLARITY_FALLING);
+        __HAL_TIM_ENABLE(&htim5);
+      } else {
+        // Read the capture value for CC2 (similar to Dval in Keil)
+        Dval = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2);  // Capture value of TIM5_CH2
+
+        // Handle the received data
+        if (RmtSta & 0x80)  // If we've received the lead-in code
+        {
+          if (Dval > 300 && Dval < 800)  // 560us standard for '0'
+          {
+            RmtRec <<= 1;  // Shift left to make space for the new bit
+            RmtRec |= 0;   // '0' received
+          }
+          else if (Dval > 1400 && Dval < 1900)  // 1680us standard for '1'
+          {
+            RmtRec <<= 1;  // Shift left
+            RmtRec |= 1;   // '1' received
+          }
+          else if (Dval > 2200 && Dval < 2700)  // 2500us standard for key press signal
+          {
+            RmtCnt++;  // Increment the key press count
+            RmtSta &= 0xF0;  // Reset the timer
+          } else {
+            HAL_GPIO_TogglePin(LED0_GPIO_Port, LED0_Pin);
+            HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
+          }
+        }
+        else if (Dval > 4200 && Dval < 4700)  // 4500us standard for lead-in code
+        {
+          RmtSta |= 0x80;  // Mark successful reception of lead-in code
+          RmtCnt = 0;  // Reset the key press counter
+        } else {
+          HAL_GPIO_TogglePin(LED0_GPIO_Port, LED0_Pin);
+          HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
+        }
+        
+        // Clear the rising edge capture flag
+        RmtSta &= ~0x10;
+        TIM_RESET_CAPTUREPOLARITY(&htim5, TIM_CHANNEL_2);
+        TIM_SET_CAPTUREPOLARITY(&htim5, TIM_CHANNEL_2, TIM_ICPOLARITY_RISING);
+      }
+    }
   }
 }
 /* USER CODE END 1 */

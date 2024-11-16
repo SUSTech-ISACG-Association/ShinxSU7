@@ -69,6 +69,10 @@ void Error_Handler(void);
 #define KEY3_Pin GPIO_PIN_0
 #define KEY3_GPIO_Port GPIOA
 #define KEY3_EXTI_IRQn EXTI0_IRQn
+#define INFRA_RECV_Pin GPIO_PIN_1
+#define INFRA_RECV_GPIO_Port GPIOA
+#define SONIC_MOTOR_Pin GPIO_PIN_6
+#define SONIC_MOTOR_GPIO_Port GPIOA
 #define KEY1_Pin GPIO_PIN_4
 #define KEY1_GPIO_Port GPIOC
 #define KEY1_EXTI_IRQn EXTI4_IRQn

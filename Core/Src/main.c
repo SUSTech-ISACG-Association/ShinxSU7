@@ -22,6 +22,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "sonic_motor.h"
+#include "motor.h"
+#include "infra.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -97,6 +99,7 @@ int main(void)
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
   HAL_TIM_Base_Start_IT(&htim5); // 红外接收
+  HAL_TIM_IC_Start_IT(&htim5, TIM_CHANNEL_2);
   HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_1); // 轮子
   HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_2);
   HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_3);
@@ -107,26 +110,30 @@ int main(void)
   __HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_4, 0);
 
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
-  __HAL_TIM_SetCompare(&htim3, TIM_CHANNEL_1, 0); // 超声波舵�?
-
   SetSonicMotor(90);
 
+  MOTOR_STOP();
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  uint16_t pw = 50;
   while (1)
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    __HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_1, pw);
-    pw += 1;
-    if(pw > 100){
-      pw = 50;
+    uint8_t key;
+    key=Remote_Scan();
+    switch(key)
+    {
+      case 98:MOTOR_FORWARD(100);break;
+      case 2: MOTOR_STOP();break;
+      case 194:MOTOR_TURNR(100);break;
+      case 34:MOTOR_TURNL(100);break;
+      case 224:MOTOR_SPINL(100);break;
+      case 168:MOTOR_BACK(100);break;
+      case 144:MOTOR_SPINR(100);break;
     }
-    HAL_Delay(100);
   }
   /* USER CODE END 3 */
 }
@@ -249,9 +256,9 @@ static void MX_TIM4_Init(void)
 
   /* USER CODE END TIM4_Init 1 */
   htim4.Instance = TIM4;
-  htim4.Init.Prescaler = 71;
+  htim4.Init.Prescaler = 0;
   htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim4.Init.Period = 99;
+  htim4.Init.Period = 7199;
   htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim4) != HAL_OK)
@@ -273,7 +280,7 @@ static void MX_TIM4_Init(void)
   {
     Error_Handler();
   }
-  sConfigOC.OCMode = TIM_OCMODE_PWM1;
+  sConfigOC.OCMode = TIM_OCMODE_PWM2;
   sConfigOC.Pulse = 0;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
@@ -338,7 +345,7 @@ static void MX_TIM5_Init(void)
   {
     Error_Handler();
   }
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
   if (HAL_TIMEx_MasterConfigSynchronization(&htim5, &sMasterConfig) != HAL_OK)
   {
@@ -418,15 +425,10 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : LED0_Pin */
-  GPIO_InitStruct.Pin = LED0_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(LED0_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : LEFT1_MOTOR_FORWARD_Pin LEFT2_MOTOR_FORWARD_Pin RIGHT1_MOTOR_FORWARD_Pin RIGHT2_MOTOR_FORWARD_Pin */
-  GPIO_InitStruct.Pin = LEFT1_MOTOR_FORWARD_Pin|LEFT2_MOTOR_FORWARD_Pin|RIGHT1_MOTOR_FORWARD_Pin|RIGHT2_MOTOR_FORWARD_Pin;
+  /*Configure GPIO pins : LED0_Pin LEFT1_MOTOR_FORWARD_Pin LEFT2_MOTOR_FORWARD_Pin RIGHT1_MOTOR_FORWARD_Pin
+                           RIGHT2_MOTOR_FORWARD_Pin */
+  GPIO_InitStruct.Pin = LED0_Pin|LEFT1_MOTOR_FORWARD_Pin|LEFT2_MOTOR_FORWARD_Pin|RIGHT1_MOTOR_FORWARD_Pin
+                          |RIGHT2_MOTOR_FORWARD_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
@@ -436,7 +438,7 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pin = LED1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
   HAL_GPIO_Init(LED1_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : AVOID_RIGHT_Pin AVOID_LEFT_Pin */
@@ -449,13 +451,13 @@ static void MX_GPIO_Init(void)
   HAL_NVIC_SetPriority(EXTI0_IRQn, 2, 0);
   HAL_NVIC_EnableIRQ(EXTI0_IRQn);
 
-  HAL_NVIC_SetPriority(EXTI1_IRQn, 2, 0);
+  HAL_NVIC_SetPriority(EXTI1_IRQn, 2, 1);
   HAL_NVIC_EnableIRQ(EXTI1_IRQn);
 
-  HAL_NVIC_SetPriority(EXTI4_IRQn, 2, 0);
+  HAL_NVIC_SetPriority(EXTI4_IRQn, 2, 2);
   HAL_NVIC_EnableIRQ(EXTI4_IRQn);
 
-  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 2, 0);
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 2, 3);
   HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
