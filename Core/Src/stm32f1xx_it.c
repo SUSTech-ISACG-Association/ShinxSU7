@@ -23,6 +23,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "motor.h"
+#include "delay.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -59,6 +60,7 @@ uint8_t RmtCnt=0;
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
+extern TIM_HandleTypeDef htim2;
 extern TIM_HandleTypeDef htim3;
 extern TIM_HandleTypeDef htim4;
 extern TIM_HandleTypeDef htim5;
@@ -303,45 +305,36 @@ void TIM5_IRQHandler(void)
 }
 
 /* USER CODE BEGIN 1 */
+float UltrasonicWave_Distance; // in centimeter(maybe)
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
-  HAL_Delay(50);
-
   switch (GPIO_Pin)
   {
   case KEY1_Pin:
+    HAL_Delay(50);
     if(HAL_GPIO_ReadPin(KEY1_GPIO_Port, KEY1_Pin) == GPIO_PIN_RESET){
-      int T;
-      for(T=7;T>=0;--T){
-        HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, (RmtSta&(1<<T))>>T);
-        HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, !((RmtSta&(1<<T))>>T));
-        HAL_Delay(300);
-      }
     }
     while(HAL_GPIO_ReadPin(KEY1_GPIO_Port, KEY1_Pin) == GPIO_PIN_RESET);
     break;
   case KEY2_Pin:
+    HAL_Delay(50);
     if(HAL_GPIO_ReadPin(KEY2_GPIO_Port, KEY2_Pin) == GPIO_PIN_RESET){
-      int T;
-      for(T=15;T>=0;--T){
-        HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, (Dval&(1<<T))>>T);
-        HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, !((Dval&(1<<T))>>T));
-        HAL_Delay(300);
-      }
     }
     while(HAL_GPIO_ReadPin(KEY2_GPIO_Port, KEY2_Pin) == GPIO_PIN_RESET);
     break;
   case KEY3_Pin:
+    HAL_Delay(50);
     if(HAL_GPIO_ReadPin(KEY3_GPIO_Port, KEY3_Pin) == GPIO_PIN_SET){
-      int T;
-      for(T=31;T>=0;--T){
-        HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, (RmtRec&(1<<T))>>T);
-        HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, !((RmtRec&(1<<T))>>T));
-        HAL_Delay(300);
-      }
     }
     while(HAL_GPIO_ReadPin(KEY3_GPIO_Port, KEY3_Pin) == GPIO_PIN_SET);
     break;
   
+  case SONIC_WAVE_RECV_Pin:
+    HAL_Delay_us(10);
+    __HAL_TIM_SetCounter(&htim2, 0);
+    HAL_TIM_Base_Start(&htim2);
+    while(HAL_GPIO_ReadPin(SONIC_WAVE_RECV_GPIO_Port, SONIC_WAVE_RECV_Pin));
+    HAL_TIM_Base_Stop(&htim2);
+    UltrasonicWave_Distance = __HAL_TIM_GetCounter(&htim2) * 340 / 200.0;
   default:
     break;
   }
