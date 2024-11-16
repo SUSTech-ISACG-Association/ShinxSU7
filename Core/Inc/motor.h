@@ -5,11 +5,9 @@
 
 extern TIM_HandleTypeDef htim4;
 
-void SetMotorSpeed(unsigned char LR, unsigned char FB, signed char speed);
-
 #define __SetMotorSpeed(__CHANNEL__, __PORT__, __PIN__, __speed__)                                                     \
     do {                                                                                                               \
-        __HAL_TIM_SetCompare(&htim4, (__CHANNEL__), (72 * ((__speed__) < 0 ? -(__speed__) : 100 - (__speed__))));           \
+        __HAL_TIM_SetCompare(&htim4, (__CHANNEL__), (72 * ((__speed__) < 0 ? -(__speed__) : 100 - (__speed__))));      \
         HAL_GPIO_WritePin((__PORT__), (__PIN__), ((__speed__) < 0 ? GPIO_PIN_SET : GPIO_PIN_RESET));                   \
     } while (0)
 
@@ -95,6 +93,38 @@ void SetMotorSpeed(unsigned char LR, unsigned char FB, signed char speed);
         SetMotorSpeedLB(0);                                                                                            \
         SetMotorSpeedRF(0);                                                                                            \
         SetMotorSpeedRB(0);                                                                                            \
+    } while (0)
+
+#define MOTOR_FORWARD_L(speed_forward, speed_L)                                                                        \
+    do {                                                                                                               \
+        SetMotorSpeedLF(speed_forward - speed_L);                                                                      \
+        SetMotorSpeedLB(speed_forward - speed_L);                                                                      \
+        SetMotorSpeedRF(speed_forward);                                                                                \
+        SetMotorSpeedRB(speed_forward);                                                                                \
+    } while (0)
+
+#define MOTOR_FORWARD_R(speed_forward, speed_R)                                                                        \
+    do {                                                                                                               \
+        SetMotorSpeedLF(speed_forward);                                                                                \
+        SetMotorSpeedLB(speed_forward);                                                                                \
+        SetMotorSpeedRF(speed_forward - speed_R);                                                                      \
+        SetMotorSpeedRB(speed_forward - speed_R);                                                                      \
+    } while (0)
+
+#define MOTOR_BACK_L(speed_back, speed_L)                                                                              \
+    do {                                                                                                               \
+        SetMotorSpeedLF(-speed_back + speed_L);                                                                        \
+        SetMotorSpeedLB(-speed_back + speed_L);                                                                        \
+        SetMotorSpeedRF(-speed_back);                                                                                  \
+        SetMotorSpeedRB(-speed_back);                                                                                  \
+    } while (0)
+
+#define MOTOR_BACK_R(speed_back, speed_R)                                                                              \
+    do {                                                                                                               \
+        SetMotorSpeedLF(-speed_back);                                                                                  \
+        SetMotorSpeedLB(-speed_back);                                                                                  \
+        SetMotorSpeedRF(-speed_back + speed_R);                                                                        \
+        SetMotorSpeedRB(-speed_back + speed_R);                                                                        \
     } while (0)
 
 #endif

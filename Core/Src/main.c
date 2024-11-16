@@ -101,9 +101,10 @@ int main(void)
   MX_TIM3_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
-  HAL_TIM_Base_Start_IT(&htim5); // 红外接收
+  // htim2: sonic wave reflection timer
+  HAL_TIM_Base_Start_IT(&htim5); // infrared remote receive
   HAL_TIM_IC_Start_IT(&htim5, TIM_CHANNEL_2);
-  HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_1); // 轮子
+  HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_1); // wheels PWM
   HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_2);
   HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_3);
   HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);
@@ -112,7 +113,7 @@ int main(void)
   __HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_3, 0);
   __HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_4, 0);
 
-  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1); // sonic wave motor PWM
   SetSonicMotor(90);
 
   MOTOR_STOP();
@@ -137,14 +138,6 @@ int main(void)
       case 168:MOTOR_BACK(100);break;
       case 144:MOTOR_SPINR(100);break;
     }
-
-    HAL_GPIO_WritePin(SONIC_WAVE_SEND_GPIO_Port, SONIC_WAVE_SEND_Pin, GPIO_PIN_SET);
-    for(int i=0;i<100;++i);
-    HAL_GPIO_WritePin(SONIC_WAVE_SEND_GPIO_Port, SONIC_WAVE_SEND_Pin, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, GPIO_PIN_RESET);
-    while (HAL_GPIO_ReadPin(SONIC_WAVE_RECV_GPIO_Port, SONIC_WAVE_RECV_Pin));
-    HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, GPIO_PIN_SET);
-    
   }
   /* USER CODE END 3 */
 }

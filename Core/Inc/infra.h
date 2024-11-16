@@ -5,6 +5,7 @@
 
 #define REMOTE_ID 0
 
+// Used in while(1) to get remote instruction
 uint8_t Remote_Scan();
 
 #endif

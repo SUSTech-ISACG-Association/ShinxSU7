@@ -329,7 +329,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
     break;
   
   case SONIC_WAVE_RECV_Pin:
-    HAL_Delay_us(10);
+    HAL_Delay_us(10); // wait sonic module send sonic pulse
     __HAL_TIM_SetCounter(&htim2, 0);
     HAL_TIM_Base_Start(&htim2);
     while(HAL_GPIO_ReadPin(SONIC_WAVE_RECV_GPIO_Port, SONIC_WAVE_RECV_Pin));
@@ -341,7 +341,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 }
 
 /* RmtSta:
-  [8:8] is receiving 0x80
+  [8:8] is receiving(lead in) 0x80
   [7:7] is reveived  0x40
   [5:5] rising/falling capture 0x10
   [4:0] timer for timeout
@@ -385,13 +385,13 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
         {
           if (Dval > 300 && Dval < 800)  // 560us standard for '0'
           {
-            RmtRec <<= 1;  // Shift left to make space for the new bit
-            RmtRec |= 0;   // '0' received
+            RmtRec <<= 1;
+            RmtRec |= 0;
           }
           else if (Dval > 1400 && Dval < 1900)  // 1680us standard for '1'
           {
-            RmtRec <<= 1;  // Shift left
-            RmtRec |= 1;   // '1' received
+            RmtRec <<= 1;
+            RmtRec |= 1;
           }
           else if (Dval > 2200 && Dval < 2700)  // 2500us standard for key press signal
           {

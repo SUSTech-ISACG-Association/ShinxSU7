@@ -24,13 +24,13 @@ void HAL_Delay_us(uint32_t us)
 void HAL_Delay_us2(uint32_t nus)
 {		
 	uint32_t temp;	    	 
-	SysTick->LOAD=nus*9; 					//时间加载	  		 
-	SysTick->VAL=0x00;        					//清空计数器
-	SysTick->CTRL|=SysTick_CTRL_ENABLE_Msk ;	//开始倒数	  
+	SysTick->LOAD=nus*9;
+	SysTick->VAL=0x00;
+	SysTick->CTRL|=SysTick_CTRL_ENABLE_Msk ;
 	do
 	{
 		temp=SysTick->CTRL;
-	}while((temp&0x01)&&!(temp&(1<<16)));		//等待时间到达   
-	SysTick->CTRL&=~SysTick_CTRL_ENABLE_Msk;	//关闭计数器
-	SysTick->VAL =0X00;      					 //清空计数器	 
+	}while((temp&0x01)&&!(temp&(1<<16)));
+	SysTick->CTRL&=~SysTick_CTRL_ENABLE_Msk;
+	SysTick->VAL =0X00;
 }
