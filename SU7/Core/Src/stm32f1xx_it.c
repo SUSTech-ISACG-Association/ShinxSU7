@@ -312,20 +312,35 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
   case KEY1_Pin:
     HAL_Delay(50);
     if(HAL_GPIO_ReadPin(KEY1_GPIO_Port, KEY1_Pin) == GPIO_PIN_RESET){
+      HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, GPIO_PIN_SET);
+      MOTOR_FORWARD(90);
     }
     while(HAL_GPIO_ReadPin(KEY1_GPIO_Port, KEY1_Pin) == GPIO_PIN_RESET);
+      HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, GPIO_PIN_RESET);
+    MOTOR_STOP();
     break;
   case KEY2_Pin:
     HAL_Delay(50);
     if(HAL_GPIO_ReadPin(KEY2_GPIO_Port, KEY2_Pin) == GPIO_PIN_RESET){
+      HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_SET);
+      MOTOR_BACK(90);
     }
     while(HAL_GPIO_ReadPin(KEY2_GPIO_Port, KEY2_Pin) == GPIO_PIN_RESET);
+      HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_RESET);
+    MOTOR_STOP();
     break;
   case KEY3_Pin:
     HAL_Delay(50);
     if(HAL_GPIO_ReadPin(KEY3_GPIO_Port, KEY3_Pin) == GPIO_PIN_SET){
     }
-    while(HAL_GPIO_ReadPin(KEY3_GPIO_Port, KEY3_Pin) == GPIO_PIN_SET);
+    while(HAL_GPIO_ReadPin(KEY3_GPIO_Port, KEY3_Pin) == GPIO_PIN_SET){
+      
+      HAL_GPIO_TogglePin(LED0_GPIO_Port, LED0_Pin);
+      HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
+      HAL_Delay(200);
+    }
+      HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, GPIO_PIN_RESET);
+      HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_RESET);
     break;
   
   case SONIC_WAVE_RECV_Pin:
@@ -397,18 +412,12 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
           {
             RmtCnt++;  // Increment the key press count
             RmtSta &= 0xF0;  // Reset the timer
-          } else {
-            HAL_GPIO_TogglePin(LED0_GPIO_Port, LED0_Pin);
-            HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
           }
         }
         else if (Dval > 4200 && Dval < 4700)  // 4500us standard for lead-in code
         {
           RmtSta |= 0x80;  // Mark successful reception of lead-in code
           RmtCnt = 0;  // Reset the key press counter
-        } else {
-          HAL_GPIO_TogglePin(LED0_GPIO_Port, LED0_Pin);
-          HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
         }
         
         // Clear the rising edge capture flag

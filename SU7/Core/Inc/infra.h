@@ -7,5 +7,6 @@
 
 // Used in while(1) to get remote instruction
 uint8_t Remote_Scan();
+uint8_t Remote_Count();
 
 #endif

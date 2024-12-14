@@ -27,3 +27,7 @@ uint8_t Remote_Scan()
     }
     return sta;
 }
+
+uint8_t Remote_Count(){
+    return (RmtSta & 0x40) ? RmtCnt : 0;
+}
