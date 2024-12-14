@@ -25,7 +25,7 @@ typedef struct {
 
 typedef Point2i Waypoint;
 
-// Waypoint Vector; Do not operator on any of the members directly;
+// Waypoint Vector; Do not operate on any of the members directly;
 // Use provided methods instead
 typedef struct {
     Waypoint *arr; // Underlying storage
