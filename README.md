@@ -2,9 +2,11 @@
 
 ## Proto for Bluetooth
 
-Control Code -> DATA -> ACK -> Control Code -> DATA -> ACK -> ...
+Control Code -> (ACK1 -> DATA ->) ACK2 -> Control Code -> (ACK1 -> DATA ->) ACK2 -> ...
 
-Control Code sent by LeiJun, ACK sent by SU7, DATA can be sent by both.
+If no data sent, skip ACK1 and DATA transmit.
+
+Control Code sent by LeiJun, ACK1/2 sent by SU7, DATA can be sent by both.
 
 | Control Code | SU7 <-> LeiJun               | Data Length            |
 | ------------ | ---------------------------- | ---------------------- |
@@ -28,9 +30,12 @@ Control Code sent by LeiJun, ACK sent by SU7, DATA can be sent by both.
 
 ACK Code:
 
-| ACK Code | Function                                                     |
-| -------- | ------------------------------------------------------------ |
-| 0x00     | ACK                                                          |
-| 0xF0     | Out of range                                                 |
-| 0xFF     | NACK                                                         |
-| 0x80     | Su7 need send data, after LeiJun receive this, send this as control code to fetch data. |
+| ACK1/2 Code | Function     |
+| ----------- | ------------ |
+| 0x00        | ACK          |
+| 0xF0        | Out of range |
+| 0xFF        | NACK         |
+
+| ACK2 Code | Function                                                     |
+| --------- | ------------------------------------------------------------ |
+| 0x80~0xEF | Su7 need send data, after LeiJun receive this, send this as control code to fetch data. |

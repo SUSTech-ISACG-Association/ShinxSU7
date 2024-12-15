@@ -24,6 +24,7 @@
 /* USER CODE BEGIN Includes */
 #include "motor.h"
 #include "delay.h"
+#include "bluetooth.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -60,11 +61,10 @@ uint8_t RmtCnt=0;
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
-extern TIM_HandleTypeDef htim3;
-extern TIM_HandleTypeDef htim4;
 extern TIM_HandleTypeDef htim5;
+extern UART_HandleTypeDef huart1;
 /* USER CODE BEGIN EV */
-
+extern TIM_HandleTypeDef htim2;
 /* USER CODE END EV */
 
 /******************************************************************************/
@@ -262,31 +262,17 @@ void EXTI9_5_IRQHandler(void)
 }
 
 /**
-  * @brief This function handles TIM3 global interrupt.
+  * @brief This function handles USART1 global interrupt.
   */
-void TIM3_IRQHandler(void)
+void USART1_IRQHandler(void)
 {
-  /* USER CODE BEGIN TIM3_IRQn 0 */
+  /* USER CODE BEGIN USART1_IRQn 0 */
 
-  /* USER CODE END TIM3_IRQn 0 */
-  HAL_TIM_IRQHandler(&htim3);
-  /* USER CODE BEGIN TIM3_IRQn 1 */
+  /* USER CODE END USART1_IRQn 0 */
+  HAL_UART_IRQHandler(&huart1);
+  /* USER CODE BEGIN USART1_IRQn 1 */
 
-  /* USER CODE END TIM3_IRQn 1 */
-}
-
-/**
-  * @brief This function handles TIM4 global interrupt.
-  */
-void TIM4_IRQHandler(void)
-{
-  /* USER CODE BEGIN TIM4_IRQn 0 */
-
-  /* USER CODE END TIM4_IRQn 0 */
-  HAL_TIM_IRQHandler(&htim4);
-  /* USER CODE BEGIN TIM4_IRQn 1 */
-
-  /* USER CODE END TIM4_IRQn 1 */
+  /* USER CODE END USART1_IRQn 1 */
 }
 
 /**
@@ -362,7 +348,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 */
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
-  if (htim->Instance == TIM5)	// 判断是定时器5�?�生中断
+  if (htim->Instance == TIM5)	// 判断是定时器5�?�生中断
   {
     if(RmtSta & 0x80){
       RmtSta &= ~0x10;
@@ -379,7 +365,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 {
-  if (htim->Instance == TIM5)	// 判断是定时器5�?�生中断
+  if (htim->Instance == TIM5)	// 判断是定时器5�?�生中断
   {
     if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2)  // Make sure this is for CC2
     {
@@ -425,6 +411,12 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
         TIM_SET_CAPTUREPOLARITY(&htim5, TIM_CHANNEL_2, TIM_ICPOLARITY_RISING);
       }
     }
+  }
+}
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
+  if (huart->Instance == USART1) {
+    bluetooth_RxCallback();
   }
 }
 /* USER CODE END 1 */
