@@ -34,9 +34,25 @@ void bluetooth_RxCallback(){
         bluetooth_sendACK2(0x00);
         start_bluetooth_IT();
         break;
-    case 0x01: //TODO, set to control mode
+    case 0x01:
+        bluetooth_sendACK2(set_control_mode());
         break;
     case 0x02:
+        bluetooth_sendACK2(set_waypoint_mode());
+        break;
+    case 0x03:
+        bluetooth_sendACK2(set_auto_avoid_mode());
+        break;
+    case 0x04:
+        bluetooth_sendACK2(set_auto_race_mode());
+        break;
+    case 0x05:
+        start_mode();
+        bluetooth_sendACK2(0x00);
+        break;
+    case 0x06:
+        end_mode();
+        bluetooth_sendACK2(0x00);
         break;
     case 0x10:
         if (flag == 0) {
@@ -44,14 +60,16 @@ void bluetooth_RxCallback(){
             HAL_UART_Receive_IT(huart, &proto_buffer, 4);
             flag = 1;
         } else {
-            uint8_t spd = (proto_buffer&0xff000000)>>24;
-            SetMotorSpeedLF(spd);
-            spd = (proto_buffer&0x00ff0000)>>16;
-            SetMotorSpeedLB(spd);
-            spd = (proto_buffer&0x0000ff00)>>8;
-            SetMotorSpeedRF(spd);
-            spd = (proto_buffer&0x000000ff)>>0;
-            SetMotorSpeedRB(spd);
+            if (su7mode == CONTROL_MODE){
+                uint8_t spd = (proto_buffer&0xff000000)>>24;
+                SetMotorSpeedLF(spd);
+                spd = (proto_buffer&0x00ff0000)>>16;
+                SetMotorSpeedLB(spd);
+                spd = (proto_buffer&0x0000ff00)>>8;
+                SetMotorSpeedRF(spd);
+                spd = (proto_buffer&0x000000ff)>>0;
+                SetMotorSpeedRB(spd);
+            }
             flag = 0;
             bluetooth_sendACK2(0x00);
             start_bluetooth_IT();
@@ -63,8 +81,10 @@ void bluetooth_RxCallback(){
             HAL_UART_Receive_IT(huart, &proto_buffer, 4);
             flag = 1;
         } else {
-            uint8_t spd = *((uint8_t*)(&proto_buffer));
-            SetMotorSpeedLF(spd);
+            if (su7mode == CONTROL_MODE){
+                uint8_t spd = *((uint8_t*)(&proto_buffer));
+                SetMotorSpeedLF(spd);
+            }
             flag = 0;
             bluetooth_sendACK2(0x00);
             start_bluetooth_IT();
@@ -79,17 +99,14 @@ void bluetooth_RxCallback(){
             uint8_t cc = *((uint8_t*)(&proto_code));
             if (cc == 0xff){
                 bluetooth_sendACK2(0x00);
+                su7state = (SU7State_t){ShinxScene1.waypoints.arr[0].x*0.8 + 0.4 ,ShinxScene1.waypoints.arr[0].y*0.8 + 0.4, 0};
                 start_bluetooth_IT();
                 flag = 0;
             } else {
                 Scene_add_waypoint(&ShinxScene1, (Waypoint){cc>>2, cc&0x4});
             }
         }
-    case 0x21:
-        su7state = (SU7State_t){ShinxScene1.waypoints.arr[0].x*0.8 + 0.4 ,ShinxScene1.waypoints.arr[0].y*0.8 + 0.4, 0};
-        start_follow_waypoint();
-        bluetooth_sendACK2(0x00);
-        
+        break;
     case 0x80:
         bluetooth_sendACK1(0x00);
         my_message_t *p = find_message(0x80);

@@ -31,7 +31,7 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-
+SU7Mode_t su7mode = CONTROL_MODE;
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -53,7 +53,7 @@ TIM_HandleTypeDef htim5;
 UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN PV */
-uint8_t follow_waypoint = 0;
+uint8_t SU7Running = 0;
 int16_t wayi = 0;
 /* USER CODE END PV */
 
@@ -154,9 +154,9 @@ int main(void)
       case 144:MOTOR_SPINR(100);break;
     }
 
-    if (follow_waypoint) {
+    if (su7mode == WAYPOINT_MODE && SU7Running) {
       if (wayi == ShinxScene1.waypoints.length) {
-        follow_waypoint = 0;
+        end_mode();
         wayi = 0;
       } else {
         direction_t dir = GetDirection(ShinxScene1.waypoints.arr[wayi], ShinxScene1.waypoints.arr[wayi+1]);
@@ -573,9 +573,40 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-void start_follow_waypoint(){
+uint8_t set_control_mode(){
+  if (SU7Running) {
+    return 0xf1;
+  } else {
+    su7mode = CONTROL_MODE;
+  }
+}
+uint8_t set_waypoint_mode(){
+  if (SU7Running) {
+    return 0xf1;
+  } else {
+    su7mode = WAYPOINT_MODE;
+  }
+}
+uint8_t set_auto_avoid_mode(){
+  if (SU7Running) {
+    return 0xf1;
+  } else {
+    su7mode = AUTO_AVOID_MODE;
+  }
+}
+uint8_t set_auto_race_mode(){
+  if (SU7Running) {
+    return 0xf1;
+  } else {
+    su7mode = AUTO_RACE_MODE;
+  }
+}
+void start_mode(){
   wayi = 0;
-  follow_waypoint = 1;
+  SU7Running = 1;
+}
+void end_mode() {
+  SU7Running = 0;
 }
 /* USER CODE END 4 */
 
