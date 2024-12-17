@@ -1,11 +1,7 @@
 #include "objects.h"
 #include "control.h"
 #include "main.h"
-#ifndef V3
-    #include "lcd_v4.h"
-#else
-    #include "lcd.h"
-#endif
+#include "lcd.h"
 
 #include <stddef.h>
 #include <stdlib.h>
@@ -55,9 +51,8 @@ myobj_t* new_myobj(uint16_t x, uint16_t y, object_type_t ot){
     p->y = y;
     if (ot == OBSTACLE){
         p->data = (img_t*)malloc(sizeof(img_t));
-        p->data->data = obstacle_image;
+        p->data->data = (uint16_t* ) obstacle_image;
         p->data->img_x = p->data->img_y = 72;
-        p->data->mask = obstacle_image_transparent;
         p->data->scale = 1;
     } else if (ot == BUTTON) {
         p->data = (img_t*)malloc(sizeof(img_t));
