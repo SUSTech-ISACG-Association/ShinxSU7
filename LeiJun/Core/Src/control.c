@@ -1,9 +1,6 @@
 #include "control.h"
-#ifndef V3
-    #include "lcd_v4.h"
-#else
-    #include "lcd.h"
-#endif
+#include "lcd.h"
+
 #include <stdlib.h>
 
 uint16_t touch_state = 0;

@@ -44,6 +44,7 @@ extern "C" {
 /* USER CODE BEGIN EC */
 extern uint8_t uRx_Data[1024], rxBuffer[20];
 extern int uLength;
+extern const uint8_t obstacle_image[1800];
 /* USER CODE END EC */
 
 /* Exported macro ------------------------------------------------------------*/

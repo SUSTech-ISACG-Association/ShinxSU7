@@ -17,7 +17,6 @@ void remove_lt(list_t *p);
 
 typedef struct img{
     const uint16_t *data;
-    const uint16_t *mask;
     uint16_t img_x, img_y, scale;
 } img_t;
 

@@ -57,7 +57,6 @@
 
 /* External variables --------------------------------------------------------*/
 extern TIM_HandleTypeDef htim3;
-extern UART_HandleTypeDef huart1;
 /* USER CODE BEGIN EV */
 
 /* USER CODE END EV */
@@ -243,20 +242,6 @@ void TIM3_IRQHandler(void)
 }
 
 /**
-  * @brief This function handles USART1 global interrupt.
-  */
-void USART1_IRQHandler(void)
-{
-  /* USER CODE BEGIN USART1_IRQn 0 */
-
-  /* USER CODE END USART1_IRQn 0 */
-  HAL_UART_IRQHandler(&huart1);
-  /* USER CODE BEGIN USART1_IRQn 1 */
-
-  /* USER CODE END USART1_IRQn 1 */
-}
-
-/**
   * @brief This function handles EXTI line[15:10] interrupts.
   */
 void EXTI15_10_IRQHandler(void)
@@ -285,18 +270,6 @@ __weak void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 		default: break;
 	}
 }
-
-__weak void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
-	if(huart->Instance == USART1){
-		HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_RESET);
-		if (rxBuffer[0] == '\r' || rxBuffer[0] == '\n') {
-			uLength = 0;
-		} else {
-			uRx_Data[uLength++] = rxBuffer[0];
-		}
-	}
-}
-
 
 __weak void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 

@@ -1,10 +1,6 @@
 #include "draw.h"
 #include "objects.h"
-#ifndef V3
-    #include "lcd_v4.h"
-#else
-    #include "lcd.h"
-#endif
+#include "lcd.h"
 
 #include <stddef.h>
 #include <string.h>
@@ -50,7 +46,7 @@ void draw_elements(const myobj_t *p){
             las_y = 32000;
             for(uint16_t jj=ddj;jj<dy;++jj){
                 uint16_t idy = idx + j;
-                if(im->mask[idy>>4] & (1<<(idy&15))){
+                if(1){
                     POINT_COLOR = im->data[i*im->img_x+j];
                     if (las_y + 1 != ii){
                         LCD_DrawPoint(jj,ii);
@@ -108,7 +104,7 @@ void draw_elements_notrans(const myobj_t *p) {
 void draw_UI(const myobj_t *p){
     const img_t* im = get_obj_img(p);
     LCD_Fill_Window(mymax(p->x, 0), mymax(p->y, 0), mymin(p->x + im->img_x - 1, lcddev.width-1), mymin(p->y + im->img_y - 1, lcddev.height-1), im->data[0]);
-    const char *ss = im->mask;
+    const char *ss = im->data;
     size_t lss = strlen(ss);
     uint16_t dx = (im->img_x - lss * (FONT_SIZE>>1))>>1;
     uint16_t dy = (im->img_y - FONT_SIZE)>>1;
