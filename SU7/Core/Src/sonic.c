@@ -16,13 +16,13 @@ float UltrasonicWave_StartMeasure()
 
 float SonicDetect(float angle)
 {
-    uint32_t l1 = GetMotorSpeedLB(), l2 = GetMotorSpeedLF(), l3=GetMotorSpeedRB(), l4=GetMotorSpeedRF();
+    // uint32_t l1 = GetMotorSpeedLB(), l2 = GetMotorSpeedLF(), l3=GetMotorSpeedRB(), l4=GetMotorSpeedRF();
     SetSonicMotor(angle);
     HAL_Delay(200);
     float rt = UltrasonicWave_StartMeasure();
-    SetMotorSpeedLB(l1);
-    SetMotorSpeedLF(l2);
-    SetMotorSpeedRB(l3);
-    SetMotorSpeedRF(l4);
+    // SetMotorSpeedLB(l1);
+    // SetMotorSpeedLF(l2);
+    // SetMotorSpeedRB(l3);
+    // SetMotorSpeedRF(l4);
     return rt;
 }

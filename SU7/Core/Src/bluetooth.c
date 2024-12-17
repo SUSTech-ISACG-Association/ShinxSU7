@@ -6,6 +6,18 @@
 #include "control.h"
 #include "main.h"
 
+void set_bluetooth_huart(UART_HandleTypeDef* h) {
+    huart = h;
+}
+
+void start_bluetooth_IT(){
+    HAL_UART_Receive_IT(huart, &proto_code, 1);
+}
+
+void stop_bluetooth_IT() {
+    HAL_UART_AbortReceive_IT(huart);
+}
+
 uint8_t proto_code, flag=0;
 uint32_t proto_buffer;
 UART_HandleTypeDef *huart = NULL;
@@ -99,7 +111,7 @@ void bluetooth_RxCallback(){
             uint8_t cc = *((uint8_t*)(&proto_code));
             if (cc == 0xff){
                 bluetooth_sendACK2(0x00);
-                su7state = (SU7State_t){ShinxScene1.waypoints.arr[0].x*0.8 + 0.4 ,ShinxScene1.waypoints.arr[0].y*0.8 + 0.4, 0};
+                su7state = (SU7State_t){ShinxScene1.waypoints.arr[0].x, ShinxScene1.waypoints.arr[0].y, Y_NEGATIVE};
                 start_bluetooth_IT();
                 flag = 0;
             } else {

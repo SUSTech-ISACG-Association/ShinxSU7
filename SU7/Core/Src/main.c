@@ -154,14 +154,20 @@ int main(void)
       case 144:MOTOR_SPINR(100);break;
     }
 
-    if (su7mode == WAYPOINT_MODE && SU7Running) {
-      if (wayi == ShinxScene1.waypoints.length) {
-        end_mode();
-        wayi = 0;
-      } else {
-        direction_t dir = GetDirection(ShinxScene1.waypoints.arr[wayi], ShinxScene1.waypoints.arr[wayi+1]);
-        goDirection(dir, su7state.heading);
-        su7state.heading = Direction2float(dir);
+    if (SU7Running) {
+      if (su7mode == WAYPOINT_MODE) {
+        if (wayi == ShinxScene1.waypoints.length) {
+          end_mode();
+          wayi = 0;
+        } else {
+          direction_t dir = GetDirection(ShinxScene1.waypoints.arr[wayi], ShinxScene1.waypoints.arr[wayi+1]);
+          goDirection(dir, su7state.heading);
+          su7state = (SU7State_t){ShinxScene1.waypoints.arr[wayi+1].x, ShinxScene1.waypoints.arr[wayi+1].y, dir};
+        }
+      } else if (su7mode == AUTO_AVOID_MODE) {
+        autoavoid_update();
+      } else if (su7mode == AUTO_RACE_MODE) {
+        autorace_update();
       }
     }
   }

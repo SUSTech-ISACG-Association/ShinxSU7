@@ -5,8 +5,10 @@
 
 extern SU7State_t su7state;
 
-void goDirection(const direction_t dir, const float heading);
+void goDirection(const direction_t dir, const direction_t heading);
+void autoavoid_update();
+void autorace_update();
 
-void explore();
+void control_init();
 
 #endif
