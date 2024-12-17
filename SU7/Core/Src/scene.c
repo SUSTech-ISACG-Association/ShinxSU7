@@ -1,5 +1,7 @@
 #include "scene.h"
 
+Scene ShinxScene1;
+
 void Scene_init(Scene *scene)
 {
     for (int32_t y = 0; y < SCENE_COORDS_MAX_Y; ++y)

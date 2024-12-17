@@ -1,5 +1,9 @@
 # Shinx SU7
 
+1.7s for 0.8m
+
+1.53s for 360 deg
+
 ## Proto for Bluetooth
 
 Control Code -> (ACK1 -> DATA ->) ACK2 -> Control Code -> (ACK1 -> DATA ->) ACK2 -> ...
@@ -11,10 +15,10 @@ Control Code sent by LeiJun, ACK1/2 sent by SU7, DATA can be sent by both.
 | Control Code | SU7 <-> LeiJun               | Data Length            |
 | ------------ | ---------------------------- | ---------------------- |
 | 0x00         | Greeting, asking data        | 0byte                  |
-| 0x01         | Set control mode             | 0byte                  |
-| 0x02         | Set waypoint mode            | 0byte                  |
-| 0x03         | Set auto avoid mode          | 0byte                  |
-| 0x04         | Set auto race mode           | 0byte                  |
+| 0x01         | Set to control mode          | 0byte                  |
+| 0x02         | Set to waypoint mode         | 0byte                  |
+| 0x03         | Set to auto avoid mode       | 0byte                  |
+| 0x04         | Set to auto race mode        | 0byte                  |
 | 0x10         | Set all wheel control        | 4byte                  |
 | 0x11         | Set left1 wheel control      | 1byte                  |
 | 0x12         | Set left2 wheel control      | 1byte                  |
@@ -25,7 +29,7 @@ Control Code sent by LeiJun, ACK1/2 sent by SU7, DATA can be sent by both.
 | 0x30         | Set auto avoid mode position | 2byte                  |
 | 0x31         | Set auto avoid mode start    | 0byte                  |
 | 0x80         | Get obstacle distance        | 4byte                  |
-| 0x90         | Get obstacle position        | 1byte                  |
+| 0x81         | Get obstacle position        | 1byte                  |
 | 0x9x         | Get SU7 state                | Reserved               |
 
 ACK Code:

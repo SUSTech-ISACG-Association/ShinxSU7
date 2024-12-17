@@ -2,6 +2,9 @@
 #include "message_buffer.h"
 #include "motor.h"
 #include "sonic.h"
+#include "scene.h"
+#include "control.h"
+#include "main.h"
 
 uint8_t proto_code, flag=0;
 uint32_t proto_buffer;
@@ -24,13 +27,16 @@ void bluetooth_sendACK2(uint8_t ack_code){
 }
 
 void bluetooth_RxCallback(){
+    my_message_t *p;
     switch (proto_code)
     {
     case 0x00:
-        bluetooth_sendACK2(0x00); // TODO: any error code
+        bluetooth_sendACK2(0x00);
         start_bluetooth_IT();
         break;
     case 0x01: //TODO, set to control mode
+        break;
+    case 0x02:
         break;
     case 0x10:
         if (flag == 0) {
@@ -64,6 +70,26 @@ void bluetooth_RxCallback(){
             start_bluetooth_IT();
         }
         break;
+    case 0x20:
+        if (flag == 0) {
+            bluetooth_sendACK1(0x00);
+            HAL_UART_Receive_IT(huart, &proto_code, 1);
+            flag = 1;
+        } else {
+            uint8_t cc = *((uint8_t*)(&proto_code));
+            if (cc == 0xff){
+                bluetooth_sendACK2(0x00);
+                start_bluetooth_IT();
+                flag = 0;
+            } else {
+                Scene_add_waypoint(&ShinxScene1, (Waypoint){cc>>2, cc&0x4});
+            }
+        }
+    case 0x21:
+        su7state = (SU7State_t){ShinxScene1.waypoints.arr[0].x*0.8 + 0.4 ,ShinxScene1.waypoints.arr[0].y*0.8 + 0.4, 0};
+        start_follow_waypoint();
+        bluetooth_sendACK2(0x00);
+        
     case 0x80:
         bluetooth_sendACK1(0x00);
         my_message_t *p = find_message(0x80);

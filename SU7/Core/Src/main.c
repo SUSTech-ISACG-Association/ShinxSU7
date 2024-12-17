@@ -25,6 +25,8 @@
 #include "motor.h"
 #include "infra.h"
 #include "bluetooth.h"
+#include "scene.h"
+#include "control.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -51,7 +53,8 @@ TIM_HandleTypeDef htim5;
 UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN PV */
-
+uint8_t follow_waypoint = 0;
+int16_t wayi = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -127,6 +130,8 @@ int main(void)
 
   HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, GPIO_PIN_RESET);
   HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_RESET);
+
+  Scene_init(&ShinxScene1);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -147,6 +152,17 @@ int main(void)
       case 224:MOTOR_SPINL(100);break;
       case 168:MOTOR_BACK(100);break;
       case 144:MOTOR_SPINR(100);break;
+    }
+
+    if (follow_waypoint) {
+      if (wayi == ShinxScene1.waypoints.length) {
+        follow_waypoint = 0;
+        wayi = 0;
+      } else {
+        direction_t dir = GetDirection(ShinxScene1.waypoints.arr[wayi], ShinxScene1.waypoints.arr[wayi+1]);
+        goDirection(dir, su7state.heading);
+        su7state.heading = Direction2float(dir);
+      }
     }
   }
   /* USER CODE END 3 */
@@ -557,7 +573,10 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-
+void start_follow_waypoint(){
+  wayi = 0;
+  follow_waypoint = 1;
+}
 /* USER CODE END 4 */
 
 /**

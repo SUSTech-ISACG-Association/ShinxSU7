@@ -7,6 +7,8 @@
 #include "stdlib.h"
 #include "string.h"
 
+#include <math.h>
+
 // Peripheral Configurations
 #define ULTRASONIC_UNIT_CM
 
@@ -45,6 +47,8 @@ typedef struct {
     SceneObject sceneMat[SCENE_COORDS_MAX_Y][SCENE_COORDS_MAX_X]; // Scene object matrix
     WaypointVector waypoints;
 } Scene;
+
+extern Scene ShinxScene1;
 
 void Error_Handler(); // Defined in main.h
 
@@ -105,5 +109,46 @@ void Scene_add_waypoint(Scene *scene, Waypoint p);
 Waypoint Scene_pop_waypoint(Scene *scene);
 
 void Scene_set_object(Scene *scene, int32_t y, int32_t x, SceneObject obj);
+
+typedef struct {
+    float x, y; // 0~3.2
+    float heading;
+} SU7State_t;
+
+static inline float GetRotateDeg(const SU7State_t a, const SU7State_t b){
+    float angle = atanf((b.y-a.y)/(b.x-a.x)) + 90;
+    return angle - a.heading;
+}
+
+typedef enum {
+    X_POSITIVE,
+    X_NEGATIVE,
+    Y_POSITIVE,
+    Y_NEGATIVE
+} direction_t;
+
+static inline direction_t GetDirection(const Waypoint a, const Waypoint b){
+    if (a.x < b.x) return X_POSITIVE;
+    else if (a.x > b.x) return X_NEGATIVE;
+    else if (a.y < b.y) return Y_POSITIVE;
+    else return Y_NEGATIVE;
+}
+
+static inline float Direction2float(const direction_t dir){
+    switch (dir)
+    {
+    case X_POSITIVE:
+        return 90;
+    case X_NEGATIVE:
+        return 270;
+    case Y_POSITIVE:
+        return 180;
+    case Y_NEGATIVE:
+        return 0;
+    
+    default:
+        return 0;
+    }
+}
 
 #endif // SCENE_H
