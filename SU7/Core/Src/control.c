@@ -9,20 +9,23 @@ static int32_t dirx[] = {0, 1, 0, -1};
 static int32_t diry[] = {-1, 0, 1, 0};
 static uint32_t ld = 4;
 
+static const int16_t max_spd = 90;
+
 void rotDirection(const direction_t dir){
     float ang = Direction2float(dir) - Direction2float(su7state.heading);
     if (ang < 0) {
-        MOTOR_SPINR(-ang);
+        MOTOR_SPINL(max_spd);
         HAL_Delay(ROT_1d_TIME*(-ang));
     } else {
-        MOTOR_SPINL(ang);
+        MOTOR_SPINR(max_spd);
         HAL_Delay(ROT_1d_TIME*ang);
     }
+    MOTOR_STOP();
     su7state.heading = dir;
 }
 void goDirection(const direction_t dir){
     rotDirection(dir);
-    MOTOR_FORWARD(100);
+    MOTOR_FORWARD(max_spd);
     HAL_Delay(GO_1block_TIME);
     MOTOR_STOP();
     su7state.pos.x += dirx[dir];
@@ -31,9 +34,10 @@ void goDirection(const direction_t dir){
 
 static Waypoint autoavoid_start, autoavoid_end;
 static const uint32_t es_len = SCENE_COORDS_MAX_X*SCENE_COORDS_MAX_Y*4;
-static Waypoint explore_stack[es_len];
+static Waypoint explore_stack[SCENE_COORDS_MAX_X*SCENE_COORDS_MAX_Y*4];
 static uint32_t es_head;
 
+// 0 for good
 uint8_t es_push(const Waypoint a){
     if (es_head == es_len) return 0;
     explore_stack[es_head] = a;
@@ -43,7 +47,7 @@ uint8_t es_push(const Waypoint a){
 
 Waypoint es_get() {
     if(es_head != 0) {
-        return explore_stack[es_head];
+        return explore_stack[es_head-1];
     } else {
         return (Waypoint){0,0};
     }
@@ -52,9 +56,9 @@ Waypoint es_get() {
 uint8_t es_pop(){
     if(es_head != 0) {
         --es_head;
-        return 1;
-    } else {
         return 0;
+    } else {
+        return 1;
     }
 }
 
@@ -90,7 +94,7 @@ void save_goto(const Waypoint en){
         goDirection(GetDirection(su7state.pos, en));
         return;
     } else {
-        static Waypoint explore_queue[es_len];
+        static Waypoint explore_queue[SCENE_COORDS_MAX_X*SCENE_COORDS_MAX_Y*4];
         static uint32_t eq_head, eq_tail;
         static uint8_t vis[SCENE_COORDS_MAX_X][SCENE_COORDS_MAX_Y];
         static direction_t nxt[SCENE_COORDS_MAX_X][SCENE_COORDS_MAX_Y];
@@ -138,6 +142,9 @@ void autoavoid_update(){
             } else {
                 Scene_set_object(&ShinxScene1, nx.x, nx.y, SO_Empty);
                 es_push(nx);
+                // if (dis < SQUARE_LENGTH_CM * 2.5) {
+                //     Scene_set_object(&ShinxScene1, nx.x + dirx[i], nx.y + dirx[i], SO_Obstacle);
+                // } // TODO: an optimization
             }
         }
     }
@@ -147,7 +154,7 @@ void autoavoid_update(){
                 if (Scene_get_object(&ShinxScene1, i, j) == SO_Unkown) {
                     for(uint32_t k=0;k<ld;++k) {
                         nx = (Waypoint){i+dirx[k],j+diry[k]};
-                        if (check_valid_neq(nx, SO_Obstacle)){
+                        if (check_valid_neq(nx, SO_Obstacle) && check_valid_neq(nx, SO_Unkown)){
                             es_push(nx);
                             break;
                         }
@@ -174,9 +181,10 @@ typedef enum {
     TURNR
 } RaceState_t;
 
-static RaceState_t race_state;
+static RaceState_t race_state = FOLLOWING;
 
 void autorace_update(){
+    RE_UPDATE:
     uint8_t now_stateL = HAL_GPIO_ReadPin(SEARCH_L_GPIO_Port, SEARCH_L_Pin) == GPIO_PIN_SET;
     uint8_t now_stateM = HAL_GPIO_ReadPin(SEARCH_M_GPIO_Port, SEARCH_M_Pin) == GPIO_PIN_SET;
     uint8_t now_stateR = HAL_GPIO_ReadPin(SEARCH_R_GPIO_Port, SEARCH_R_Pin) == GPIO_PIN_SET;
@@ -185,9 +193,13 @@ void autorace_update(){
     {
     case 0b000:
         if (race_state == TURNL_WAITING || race_state == TURNL) {
-            race_state = TURNL;
+            MOTOR_SPINL(max_spd);
+            while(HAL_GPIO_ReadPin(SEARCH_M_GPIO_Port, SEARCH_M_Pin) == GPIO_PIN_RESET) ;
+            goto RE_UPDATE;
         } else if (race_state == TURNR_WAITING || race_state == TURNR) {
-            race_state = TURNR;
+            MOTOR_SPINR(max_spd);
+            while(HAL_GPIO_ReadPin(SEARCH_M_GPIO_Port, SEARCH_M_Pin) == GPIO_PIN_RESET) ;
+            goto RE_UPDATE;
         } else {
             race_state = FOLLOWING;
         }
@@ -222,11 +234,11 @@ void autorace_update(){
         break;
     }
     if (race_state == TURNL) {
-        MOTOR_FORWARD_L(100, 80);
+        MOTOR_FORWARD_L(max_spd, max_spd);
     } else if (race_state == TURNR) {
-        MOTOR_FORWARD_R(100, 80);
+        MOTOR_FORWARD_R(max_spd, max_spd);
     } else {
-        MOTOR_FORWARD(100);
+        MOTOR_FORWARD(max_spd);
     }
 }
 

@@ -146,7 +146,7 @@ int main(void)
     switch(key)
     {
       case 98:MOTOR_FORWARD(100);break;
-      case 2: MOTOR_STOP();break;
+      case 2: MOTOR_STOP();end_mode();break;
       case 194:MOTOR_TURNR(100);break;
       case 34:MOTOR_TURNL(100);break;
       case 224:MOTOR_SPINL(100);break;
@@ -585,6 +585,7 @@ uint8_t set_control_mode(){
     return 0xf1;
   } else {
     su7mode = CONTROL_MODE;
+    return 0x00;
   }
 }
 uint8_t set_waypoint_mode(){
@@ -592,6 +593,7 @@ uint8_t set_waypoint_mode(){
     return 0xf1;
   } else {
     su7mode = WAYPOINT_MODE;
+    return 0x00;
   }
 }
 uint8_t set_auto_avoid_mode(){
@@ -599,6 +601,7 @@ uint8_t set_auto_avoid_mode(){
     return 0xf1;
   } else {
     su7mode = AUTO_AVOID_MODE;
+    return 0x00;
   }
 }
 uint8_t set_auto_race_mode(){
@@ -606,6 +609,7 @@ uint8_t set_auto_race_mode(){
     return 0xf1;
   } else {
     su7mode = AUTO_RACE_MODE;
+    return 0x00;
   }
 }
 void start_mode(){

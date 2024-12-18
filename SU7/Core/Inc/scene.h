@@ -19,6 +19,7 @@
 #define ROT_1d_TIME 4.25 // 1530/360
 #define ROT_90d_TIME 382.5 // 1530/4
 #define GO_1block_TIME 1700 // 80cm: 1.7s
+#define GO_12cm_TIME 255 // half length of su7
 
 #define SCENE_COORDS_MAX_Y 4
 #define SCENE_COORDS_MAX_X 4
