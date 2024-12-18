@@ -6,7 +6,7 @@ void Scene_init(Scene *scene)
 {
     for (int32_t y = 0; y < SCENE_COORDS_MAX_Y; ++y)
         for (int32_t x = 0; x < SCENE_COORDS_MAX_X; ++x)
-            scene->sceneMat[y][x] = SO_Empty;
+            scene->sceneMat[y][x] = SO_Unkown;
     WaypointVector_init(&scene->waypoints);
     return;
 }
@@ -32,6 +32,10 @@ void Scene_set_object(Scene *scene, int32_t y, int32_t x, SceneObject obj)
 {
     scene->sceneMat[y][x] = obj;
     return;
+}
+SceneObject Scene_get_object(Scene *scene, int32_t y, int32_t x)
+{
+    return scene->sceneMat[y][x];
 }
 
 
@@ -92,18 +96,5 @@ direction_t GetDirection(const Waypoint a, const Waypoint b){
 }
 
 float Direction2float(const direction_t dir){
-    switch (dir)
-    {
-    case X_POSITIVE:
-        return 90;
-    case X_NEGATIVE:
-        return 270;
-    case Y_POSITIVE:
-        return 180;
-    case Y_NEGATIVE:
-        return 0;
-    
-    default:
-        return 0;
-    }
+    return dir * 90;
 }

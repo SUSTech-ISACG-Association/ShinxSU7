@@ -156,13 +156,14 @@ int main(void)
 
     if (SU7Running) {
       if (su7mode == WAYPOINT_MODE) {
+        // TODO: pack to waypoint_update()
         if (wayi == ShinxScene1.waypoints.length) {
           end_mode();
           wayi = 0;
         } else {
           direction_t dir = GetDirection(ShinxScene1.waypoints.arr[wayi], ShinxScene1.waypoints.arr[wayi+1]);
-          goDirection(dir, su7state.heading);
-          su7state = (SU7State_t){ShinxScene1.waypoints.arr[wayi+1].x, ShinxScene1.waypoints.arr[wayi+1].y, dir};
+          goDirection(dir);
+          su7state = (SU7State_t){ShinxScene1.waypoints.arr[wayi+1], dir};
         }
       } else if (su7mode == AUTO_AVOID_MODE) {
         autoavoid_update();
@@ -613,6 +614,13 @@ void start_mode(){
 }
 void end_mode() {
   SU7Running = 0;
+}
+void toggle_mode() {
+  if (SU7Running) {
+    end_mode();
+  } else {
+    start_mode();
+  }
 }
 /* USER CODE END 4 */
 

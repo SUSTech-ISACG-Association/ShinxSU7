@@ -16,6 +16,9 @@
 #define SCENE_N_SQUARE_ROW 4
 #define SCENE_N_SQUARE_COLUMN 4
 #define SQUARE_LENGTH_CM 80
+#define ROT_1d_TIME 4.25 // 1530/360
+#define ROT_90d_TIME 382.5 // 1530/4
+#define GO_1block_TIME 1700 // 80cm: 1.7s
 
 #define SCENE_COORDS_MAX_Y 4
 #define SCENE_COORDS_MAX_X 4
@@ -37,9 +40,10 @@ typedef struct {
 
 typedef enum
 {
-    SO_Empty = 0,
+    SO_Unkown = 0,
     SO_Source = 1,
     SO_Destination = 2,
+    SO_Empty = 3,
     SO_Obstacle = 255,
 } SceneObject;
 
@@ -74,16 +78,17 @@ void Scene_add_waypoint(Scene *scene, Waypoint p);
 Waypoint Scene_pop_waypoint(Scene *scene);
 
 void Scene_set_object(Scene *scene, int32_t y, int32_t x, SceneObject obj);
+SceneObject Scene_get_object(Scene *scene, int32_t y, int32_t x);
 
 typedef enum {
-    X_POSITIVE,
-    X_NEGATIVE,
-    Y_POSITIVE,
-    Y_NEGATIVE
+    Y_NEGATIVE = 0,
+    X_POSITIVE = 1,
+    Y_POSITIVE = 2,
+    X_NEGATIVE = 3,
 } direction_t;
 
 typedef struct {
-    uint8_t x, y;
+    Point2i pos;
     direction_t heading;
 } SU7State_t;
 

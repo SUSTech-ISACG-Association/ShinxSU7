@@ -67,6 +67,7 @@ uint8_t set_auto_avoid_mode();
 uint8_t set_auto_race_mode();
 void start_mode();
 void end_mode();
+void toggle_mode();
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
