@@ -1,6 +1,5 @@
 /* USER CODE BEGIN Header */
-/**
-  ******************************************************************************
+/**  ******************************************************************************
   * @file           : main.c
   * @brief          : Main program body
   ******************************************************************************
@@ -119,7 +118,7 @@ int main(void)
 	char s[6];
     get_touch_state(&tp_dev, &objects_head);
     HAL_UART_Transmit(&huart3, "Hello", 5, HAL_MAX_DELAY);
-    HAL_UART_Receive((&huart3, s, 5, HAL_MAX_DELAY);
+    HAL_UART_Receive(&huart3, s, 5, HAL_MAX_DELAY);
 
     LCD_ShowString(30, 30, 200, 16, 16, s);
 
@@ -241,3 +240,15 @@ void assert_failed(uint8_t *file, uint32_t line)
 #endif /* USE_FULL_ASSERT */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
+N 6 */
+    /* User can add his own implementation to report the file name and line number,
+       ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+  /* USER CODE END 6 */
+}
+#endif /* USE_FULL_ASSERT */
+N 6 */
+    /* User can add his own implementation to report the file name and line number,
+       ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+  /* USER CODE END 6 */
+}
+#endif /* USE_FULL_ASSERT */

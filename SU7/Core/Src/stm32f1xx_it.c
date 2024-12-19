@@ -327,9 +327,16 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
     HAL_Delay_us(10); // wait sonic module send sonic pulse
     __HAL_TIM_SetCounter(&htim2, 0);
     HAL_TIM_Base_Start(&htim2);
-    while(HAL_GPIO_ReadPin(SONIC_WAVE_RECV_GPIO_Port, SONIC_WAVE_RECV_Pin));
+    uint32_t cnt = 0;
+    while((__HAL_TIM_GetCounter(&htim2) < 4900)){
+      if (HAL_GPIO_ReadPin(SONIC_WAVE_RECV_GPIO_Port, SONIC_WAVE_RECV_Pin)) {
+        cnt = __HAL_TIM_GetCounter(&htim2);
+      } else if (__HAL_TIM_GetCounter(&htim2) - cnt >= 10) {
+        break;
+      }
+    }
     HAL_TIM_Base_Stop(&htim2);
-    UltrasonicWave_Distance = __HAL_TIM_GetCounter(&htim2) * 340 / 200.0;
+    UltrasonicWave_Distance = cnt * 340 / 200.0;
   default:
     break;
   }
