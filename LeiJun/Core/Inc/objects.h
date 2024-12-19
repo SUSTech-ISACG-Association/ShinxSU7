@@ -1,37 +1,20 @@
 #ifndef _OBJECTS_H
 #define _OBJECTS_H
 
+#include "touch.h"
 #include <stdint.h>
 
-typedef struct list
-{
-    void* data;
-    struct list *next;
-} list_t;
+typedef struct button_area_t {
+    uint16_t sx, sy, ex, ey;
+} button_area;
 
-extern list_t obj_list_head;
+extern button_area button_manual[9];
+extern button_area button_map[16];
+extern button_area button_auto[2];
+extern uint8_t LeiJun_mode;
 
-void insert_lt(list_t *p, void *o);
-void free_lt(list_t *p);
-void remove_lt(list_t *p);
-
-typedef struct img{
-    const uint16_t *data;
-    uint16_t img_x, img_y, scale;
-} img_t;
-
-typedef enum object_type{
-    OBSTACLE,
-    BUTTON,
-} object_type_t;
-
-typedef struct myobj{
-    int16_t x, y;
-    img_t *data;
-    object_type_t type;
-} myobj_t;
-
-const img_t *get_obj_img(const myobj_t* o);
-myobj_t* new_myobj(uint16_t x, uint16_t y, object_type_t ot);
+uint16_t which_button_pressed_manual(_m_tp_dev *p);
+uint16_t which_button_pressed_waypoint(_m_tp_dev *p);
+uint16_t which_button_pressed_auto(_m_tp_dev *p);
 
 #endif
