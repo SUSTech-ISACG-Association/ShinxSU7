@@ -63,7 +63,6 @@ uint8_t RmtCnt=0;
 
 /* External variables --------------------------------------------------------*/
 extern TIM_HandleTypeDef htim5;
-extern UART_HandleTypeDef huart1;
 /* USER CODE BEGIN EV */
 extern TIM_HandleTypeDef htim2;
 /* USER CODE END EV */
@@ -263,20 +262,6 @@ void EXTI9_5_IRQHandler(void)
 }
 
 /**
-  * @brief This function handles USART1 global interrupt.
-  */
-void USART1_IRQHandler(void)
-{
-  /* USER CODE BEGIN USART1_IRQn 0 */
-
-  /* USER CODE END USART1_IRQn 0 */
-  HAL_UART_IRQHandler(&huart1);
-  /* USER CODE BEGIN USART1_IRQn 1 */
-
-  /* USER CODE END USART1_IRQn 1 */
-}
-
-/**
   * @brief This function handles TIM5 global interrupt.
   */
 void TIM5_IRQHandler(void)
@@ -410,7 +395,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
-  if (huart->Instance == USART1) {
+  if (huart->Instance == USART2) {
     bluetooth_RxCallback();
   }
 }

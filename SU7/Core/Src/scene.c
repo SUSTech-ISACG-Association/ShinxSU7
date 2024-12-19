@@ -6,7 +6,7 @@ void Scene_init(Scene *scene)
 {
     for (int32_t y = 0; y < SCENE_COORDS_MAX_Y; ++y)
         for (int32_t x = 0; x < SCENE_COORDS_MAX_X; ++x)
-            scene->sceneMat[y][x] = SO_Unkown;
+            scene->sceneMat[y][x] = SO_Unknown;
     WaypointVector_init(&scene->waypoints);
     return;
 }
