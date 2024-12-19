@@ -24,11 +24,14 @@
 #include "sonic_motor.h"
 #include "motor.h"
 #include "infra.h"
+#include "bluetooth.h"
+#include "scene.h"
+#include "control.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-
+SU7Mode_t su7mode = CONTROL_MODE;
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -47,8 +50,11 @@ TIM_HandleTypeDef htim3;
 TIM_HandleTypeDef htim4;
 TIM_HandleTypeDef htim5;
 
-/* USER CODE BEGIN PV */
+UART_HandleTypeDef huart1;
 
+/* USER CODE BEGIN PV */
+uint8_t SU7Running = 0;
+int16_t wayi = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -58,6 +64,7 @@ static void MX_TIM4_Init(void);
 static void MX_TIM5_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_TIM2_Init(void);
+static void MX_USART1_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -100,7 +107,10 @@ int main(void)
   MX_TIM5_Init();
   MX_TIM3_Init();
   MX_TIM2_Init();
+  MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
+  set_bluetooth_huart(&huart1);
+  start_bluetooth_IT();
   // htim2: sonic wave reflection timer
   HAL_TIM_Base_Start_IT(&htim5); // infrared remote receive
   HAL_TIM_IC_Start_IT(&htim5, TIM_CHANNEL_2);
@@ -120,6 +130,8 @@ int main(void)
 
   HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, GPIO_PIN_RESET);
   HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_RESET);
+
+  Scene_init(&ShinxScene1);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -134,12 +146,30 @@ int main(void)
     switch(key)
     {
       case 98:MOTOR_FORWARD(100);break;
-      case 2: MOTOR_STOP();break;
+      case 2: MOTOR_STOP();end_mode();break;
       case 194:MOTOR_TURNR(100);break;
       case 34:MOTOR_TURNL(100);break;
       case 224:MOTOR_SPINL(100);break;
       case 168:MOTOR_BACK(100);break;
       case 144:MOTOR_SPINR(100);break;
+    }
+
+    if (SU7Running) {
+      if (su7mode == WAYPOINT_MODE) {
+        // TODO: pack to waypoint_update()
+        if (wayi == ShinxScene1.waypoints.length) {
+          end_mode();
+          wayi = 0;
+        } else {
+          direction_t dir = GetDirection(ShinxScene1.waypoints.arr[wayi], ShinxScene1.waypoints.arr[wayi+1]);
+          goDirection(dir);
+          su7state = (SU7State_t){ShinxScene1.waypoints.arr[wayi+1], dir};
+        }
+      } else if (su7mode == AUTO_AVOID_MODE) {
+        autoavoid_update();
+      } else if (su7mode == AUTO_RACE_MODE) {
+        autorace_update();
+      }
     }
   }
   /* USER CODE END 3 */
@@ -418,6 +448,39 @@ static void MX_TIM5_Init(void)
 }
 
 /**
+  * @brief USART1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART1_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART1_Init 0 */
+
+  /* USER CODE END USART1_Init 0 */
+
+  /* USER CODE BEGIN USART1_Init 1 */
+
+  /* USER CODE END USART1_Init 1 */
+  huart1.Instance = USART1;
+  huart1.Init.BaudRate = 9600;
+  huart1.Init.WordLength = UART_WORDLENGTH_8B;
+  huart1.Init.StopBits = UART_STOPBITS_1;
+  huart1.Init.Parity = UART_PARITY_NONE;
+  huart1.Init.Mode = UART_MODE_TX_RX;
+  huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart1.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART1_Init 2 */
+
+  /* USER CODE END USART1_Init 2 */
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -486,18 +549,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : PA9 */
-  GPIO_InitStruct.Pin = GPIO_PIN_9;
-  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : PA10 */
-  GPIO_InitStruct.Pin = GPIO_PIN_10;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
   /*Configure GPIO pin : LED1_Pin */
   GPIO_InitStruct.Pin = LED1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -512,16 +563,16 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(EXTI0_IRQn, 2, 0);
+  HAL_NVIC_SetPriority(EXTI0_IRQn, 3, 0);
   HAL_NVIC_EnableIRQ(EXTI0_IRQn);
 
-  HAL_NVIC_SetPriority(EXTI1_IRQn, 2, 1);
+  HAL_NVIC_SetPriority(EXTI1_IRQn, 0, 1);
   HAL_NVIC_EnableIRQ(EXTI1_IRQn);
 
-  HAL_NVIC_SetPriority(EXTI4_IRQn, 2, 2);
+  HAL_NVIC_SetPriority(EXTI4_IRQn, 3, 1);
   HAL_NVIC_EnableIRQ(EXTI4_IRQn);
 
-  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 2, 3);
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 3, 2);
   HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
@@ -529,7 +580,52 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-
+uint8_t set_control_mode(){
+  if (SU7Running) {
+    return 0xf1;
+  } else {
+    su7mode = CONTROL_MODE;
+    return 0x00;
+  }
+}
+uint8_t set_waypoint_mode(){
+  if (SU7Running) {
+    return 0xf1;
+  } else {
+    su7mode = WAYPOINT_MODE;
+    return 0x00;
+  }
+}
+uint8_t set_auto_avoid_mode(){
+  if (SU7Running) {
+    return 0xf1;
+  } else {
+    su7mode = AUTO_AVOID_MODE;
+    return 0x00;
+  }
+}
+uint8_t set_auto_race_mode(){
+  if (SU7Running) {
+    return 0xf1;
+  } else {
+    su7mode = AUTO_RACE_MODE;
+    return 0x00;
+  }
+}
+void start_mode(){
+  wayi = 0;
+  SU7Running = 1;
+}
+void end_mode() {
+  SU7Running = 0;
+}
+void toggle_mode() {
+  if (SU7Running) {
+    end_mode();
+  } else {
+    start_mode();
+  }
+}
 /* USER CODE END 4 */
 
 /**

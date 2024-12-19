@@ -27,12 +27,7 @@
 /* USER CODE BEGIN Includes */
 #define V4 0
 
-#ifdef V4
-#include "lcd_v4.h"
-#else
 #include "lcd.h"
-#endif
-
 #include "myiic.h"
 #include "touch.h"
 #include "control.h"
@@ -61,6 +56,12 @@
 /* USER CODE BEGIN PV */
 uint8_t uRx_Data[1024], rxBuffer[20];
 int uLength = 0;
+
+list_t objects_head;
+extern uint16_t touch_state;
+
+const uint8_t button_width = 30;
+const uint8_t button_height = 30;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -102,20 +103,26 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_USART1_UART_Init();
   MX_TIM3_Init();
+  MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
-  lcd_init();
+  LCD_Init();
   tp_dev.init();
   HAL_TIM_Base_Start_IT(&htim3);
-  HAL_UART_Receive_IT(&huart1, (uint8_t *) rxBuffer, 1);
+  init_button(&objects_head);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	update_movement();
+	char s[6];
+    get_touch_state(&tp_dev, &objects_head);
+    HAL_UART_Transmit(&huart3, "Hello", 5, HAL_MAX_DELAY);
+    HAL_UART_Receive((&huart3, s, 5, HAL_MAX_DELAY);
+
+    LCD_ShowString(30, 30, 200, 16, 16, s);
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -163,6 +170,42 @@ void SystemClock_Config(void)
 
 /* USER CODE BEGIN 4 */
 
+static const uint16_t lll = 7;
+static const char button_s[][20] =
+{
+  "FORWARD",
+  "BACKWARD",
+  "LEFT",
+  "RIGHT",
+  "SPIN LEFT",
+  "SPIN RIGHT",
+  "STOP"
+};
+static const uint16_t button_v[] =
+{
+  MOVE_FORWARD,
+  MOVE_BACK,
+  MOVE_LEFT,
+  MOVE_RIGHT,
+  SPIN_LEFT,
+  SPIN_RIGHT,
+  STOP
+};
+
+void init_button(list_t *p){
+  int button_leftup_x = 20, button_leftup_y = 20;
+  for(int16_t i = lll-1; i >= 0; --i){
+    myobj_t *pp = new_myobj(button_leftup_x, button_leftup_y, BUTTON);
+    pp->data->img_x = button_width;
+    pp->data->img_y = button_height;
+    uint16_t *ppx = (uint16_t*)malloc(sizeof(uint16_t)*2);
+    ppx[0] = rand();
+    ppx[1] = button_v[i];
+    pp->data->data = ppx;
+    pp->data->scale = 1;
+    insert_lt(p, pp);
+  }
+}
 /* USER CODE END 4 */
 
 /**

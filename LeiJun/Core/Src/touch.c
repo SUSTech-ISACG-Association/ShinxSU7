@@ -1,7 +1,7 @@
 #include "touch.h"
 #include "24cxx.h"
 #include "delay.h"
-#include "lcd_v4.h"
+#include "lcd.h"
 #include "math.h"
 #include "stdlib.h"
 //////////////////////////////////////////////////////////////////////////////////
@@ -18,7 +18,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 _m_tp_dev tp_dev = {
-    TP_Init, TP_Scan, TP_Adjust, 0, 0, 0, 0, 0, 0, 0, 0,
+    TP_Init, TP_Scan, TP_Adjust, {0}, {0}, 0, 0, 0, 0, 0, 0,
 };
 // Ĭ��Ϊtouchtype=0������.
 uint8_t CMD_RDX = 0XD0;
@@ -152,23 +152,25 @@ uint8_t TP_Read_XY2(uint16_t *x, uint16_t *y)
 // color:��ɫ
 void TP_Drow_Touch_Point(uint16_t x, uint16_t y, uint16_t color)
 {
-    lcd_draw_line(x - 12, y, x + 13, y, color); // ����
-    lcd_draw_line(x, y - 12, x, y + 13, color); // ����
-    lcd_draw_point(x + 1, y + 1, color);
-    lcd_draw_point(x - 1, y + 1, color);
-    lcd_draw_point(x + 1, y - 1, color);
-    lcd_draw_point(x - 1, y - 1, color);
-    lcd_draw_circle(x, y, 6, color); // ������Ȧ
+    POINT_COLOR = color;
+    LCD_DrawLine(x - 12, y, x + 13, y); // ����
+    LCD_DrawLine(x, y - 12, x, y + 13); // ����
+    LCD_DrawPoint(x + 1, y + 1);
+    LCD_DrawPoint(x - 1, y + 1);
+    LCD_DrawPoint(x + 1, y - 1);
+    LCD_DrawPoint(x - 1, y - 1);
+    LCD_Draw_Circle(x, y, 6); // ������Ȧ
 }
 // ��һ�����(2*2�ĵ�)
 // x,y:����
 // color:��ɫ
 void TP_Draw_Big_Point(uint16_t x, uint16_t y, uint16_t color)
 {
-    lcd_draw_point(x, y, color); // ���ĵ�
-    lcd_draw_point(x + 1, y, color);
-    lcd_draw_point(x, y + 1, color);
-    lcd_draw_point(x + 1, y + 1, color);
+    POINT_COLOR = color;
+    LCD_DrawPoint(x, y); // ���ĵ�
+    LCD_DrawPoint(x + 1, y);
+    LCD_DrawPoint(x, y + 1);
+    LCD_DrawPoint(x + 1, y + 1);
 }
 //////////////////////////////////////////////////////////////////////////////////
 // ��������ɨ��
@@ -250,24 +252,25 @@ uint8_t *const TP_REMIND_MSG_TBL = "Please use the stylus click the cross on the
 // ��ʾУ׼���(��������)
 void TP_Adj_Info_Show(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t x3, uint16_t y3, uint16_t fac)
 {
-    lcd_show_string(40, 160, lcddev.width, lcddev.height, 16, "x1:", RED);
-    lcd_show_string(40 + 80, 160, lcddev.width, lcddev.height, 16, "y1:", RED);
-    lcd_show_string(40, 180, lcddev.width, lcddev.height, 16, "x2:", RED);
-    lcd_show_string(40 + 80, 180, lcddev.width, lcddev.height, 16, "y2:", RED);
-    lcd_show_string(40, 200, lcddev.width, lcddev.height, 16, "x3:", RED);
-    lcd_show_string(40 + 80, 200, lcddev.width, lcddev.height, 16, "y3:", RED);
-    lcd_show_string(40, 220, lcddev.width, lcddev.height, 16, "x4:", RED);
-    lcd_show_string(40 + 80, 220, lcddev.width, lcddev.height, 16, "y4:", RED);
-    lcd_show_string(40, 240, lcddev.width, lcddev.height, 16, "fac is:", RED);
-    lcd_show_num(40 + 24, 160, x0, 4, 16, RED);      // ��ʾ��ֵ
-    lcd_show_num(40 + 24 + 80, 160, y0, 4, 16, RED); // ��ʾ��ֵ
-    lcd_show_num(40 + 24, 180, x1, 4, 16, RED);      // ��ʾ��ֵ
-    lcd_show_num(40 + 24 + 80, 180, y1, 4, 16, RED); // ��ʾ��ֵ
-    lcd_show_num(40 + 24, 200, x2, 4, 16, RED);      // ��ʾ��ֵ
-    lcd_show_num(40 + 24 + 80, 200, y2, 4, 16, RED); // ��ʾ��ֵ
-    lcd_show_num(40 + 24, 220, x3, 4, 16, RED);      // ��ʾ��ֵ
-    lcd_show_num(40 + 24 + 80, 220, y3, 4, 16, RED); // ��ʾ��ֵ
-    lcd_show_num(40 + 56, 240, fac, 3, 16, RED);     // ��ʾ��ֵ,����ֵ������95~105��Χ֮��.
+    POINT_COLOR = RED;
+    LCD_ShowString(40, 160, lcddev.width, lcddev.height, 16, "x1:");
+    LCD_ShowString(40 + 80, 160, lcddev.width, lcddev.height, 16, "y1:");
+    LCD_ShowString(40, 180, lcddev.width, lcddev.height, 16, "x2:");
+    LCD_ShowString(40 + 80, 180, lcddev.width, lcddev.height, 16, "y2:");
+    LCD_ShowString(40, 200, lcddev.width, lcddev.height, 16, "x3:");
+    LCD_ShowString(40 + 80, 200, lcddev.width, lcddev.height, 16, "y3:");
+    LCD_ShowString(40, 220, lcddev.width, lcddev.height, 16, "x4:");
+    LCD_ShowString(40 + 80, 220, lcddev.width, lcddev.height, 16, "y4:");
+    LCD_ShowString(40, 240, lcddev.width, lcddev.height, 16, "fac is:");
+    LCD_ShowNum(40 + 24, 160, x0, 4, 16);      // ��ʾ��ֵ
+    LCD_ShowNum(40 + 24 + 80, 160, y0, 4, 16); // ��ʾ��ֵ
+    LCD_ShowNum(40 + 24, 180, x1, 4, 16);      // ��ʾ��ֵ
+    LCD_ShowNum(40 + 24 + 80, 180, y1, 4, 16); // ��ʾ��ֵ
+    LCD_ShowNum(40 + 24, 200, x2, 4, 16);      // ��ʾ��ֵ
+    LCD_ShowNum(40 + 24 + 80, 200, y2, 4, 16); // ��ʾ��ֵ
+    LCD_ShowNum(40 + 24, 220, x3, 4, 16);      // ��ʾ��ֵ
+    LCD_ShowNum(40 + 24 + 80, 220, y3, 4, 16); // ��ʾ��ֵ
+    LCD_ShowNum(40 + 56, 240, fac, 3, 16);     // ��ʾ��ֵ,����ֵ������95~105��Χ֮��.
 }
 
 // ������У׼����
@@ -281,9 +284,13 @@ void TP_Adjust(void)
     double fac;
     uint16_t outtime = 0;
     cnt = 0;
-    lcd_clear(WHITE);  // ����
-    lcd_clear(WHITE);  // ����
-    lcd_show_string(40, 40, 160, 100, 16, (uint8_t *)TP_REMIND_MSG_TBL, BLACK); // ��ʾ��ʾ��Ϣ
+    POINT_COLOR = BLUE;
+    BACK_COLOR = WHITE;
+    LCD_Clear(WHITE);  // ����
+    POINT_COLOR = RED; // ��ɫ
+    LCD_Clear(WHITE);  // ����
+    POINT_COLOR = BLACK;
+    LCD_ShowString(40, 40, 160, 100, 16, (uint8_t *)TP_REMIND_MSG_TBL); // ��ʾ��ʾ��Ϣ
     TP_Drow_Touch_Point(20, 20, RED);                              // ����1
     tp_dev.sta = 0;                                                // ���������ź�
     tp_dev.xfac =
@@ -391,7 +398,7 @@ void TP_Adjust(void)
                     cnt = 0;
                     TP_Drow_Touch_Point(lcddev.width - 20, lcddev.height - 20, WHITE); // �����4
                     TP_Drow_Touch_Point(20, 20, RED);                                  // ����1
-                    lcd_show_string(40, 26, lcddev.width, lcddev.height, 16, "TP Need readjust!", BLACK);
+                    LCD_ShowString(40, 26, lcddev.width, lcddev.height, 16, "TP Need readjust!");
                     tp_dev.touchtype = !tp_dev.touchtype; // �޸Ĵ�������.
                     if (tp_dev.touchtype)                 // X,Y��������Ļ�෴
                     {
@@ -405,11 +412,12 @@ void TP_Adjust(void)
                     }
                     continue;
                 }
-                lcd_clear(WHITE);                                                                    // ����
-                lcd_show_string(35, 110, lcddev.width, lcddev.height, 16, "Touch Screen Adjust OK!", BLUE); // У�����
+                POINT_COLOR = BLUE;
+                LCD_Clear(WHITE);                                                                    // ����
+                LCD_ShowString(35, 110, lcddev.width, lcddev.height, 16, "Touch Screen Adjust OK!"); // У�����
                 HAL_Delay(1000);
                 TP_Save_Adjdata();
-                lcd_clear(WHITE); // ����
+                LCD_Clear(WHITE); // ����
                 return;           // У�����
             }
         }
@@ -448,7 +456,7 @@ uint8_t TP_Init(void)
         return 0; // �Ѿ�У׼//判断是不是需要校准
     else          // δУ׼?
     {
-        lcd_clear(WHITE); // ����
+        LCD_Clear(WHITE); // ����
         TP_Adjust();      // ��ĻУ׼
     }
     TP_Get_Adjdata();

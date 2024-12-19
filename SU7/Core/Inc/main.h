@@ -36,7 +36,13 @@ extern "C" {
 
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
-
+typedef enum {
+  CONTROL_MODE,
+  WAYPOINT_MODE,
+  AUTO_AVOID_MODE,
+  AUTO_RACE_MODE
+} SU7Mode_t;
+extern SU7Mode_t su7mode;
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/
@@ -55,7 +61,13 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
-
+uint8_t set_control_mode();
+uint8_t set_waypoint_mode();
+uint8_t set_auto_avoid_mode();
+uint8_t set_auto_race_mode();
+void start_mode();
+void end_mode();
+void toggle_mode();
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
