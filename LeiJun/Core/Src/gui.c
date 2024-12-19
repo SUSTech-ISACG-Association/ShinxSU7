@@ -38,3 +38,8 @@ void draw_manual(float distance)
         LCD_ShowString(10, 250, 200, 16, 16, distance_buffer);
     }
 }
+
+void draw_waypoint()
+{
+
+}
