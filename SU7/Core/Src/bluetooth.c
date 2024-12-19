@@ -40,6 +40,8 @@ void bluetooth_sendACK2(uint8_t ack_code){
 
 void bluetooth_RxCallback(){
     my_message_t *p;
+    HAL_GPIO_TogglePin(LED0_GPIO_Port, LED0_Pin);
+    HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
     switch (proto_code)
     {
     case 0x00:
@@ -48,23 +50,29 @@ void bluetooth_RxCallback(){
         break;
     case 0x01:
         bluetooth_sendACK2(set_control_mode());
+        start_bluetooth_IT();
         break;
     case 0x02:
         bluetooth_sendACK2(set_waypoint_mode());
+        start_bluetooth_IT();
         break;
     case 0x03:
         bluetooth_sendACK2(set_auto_avoid_mode());
+        start_bluetooth_IT();
         break;
     case 0x04:
         bluetooth_sendACK2(set_auto_race_mode());
+        start_bluetooth_IT();
         break;
     case 0x05:
         start_mode();
         bluetooth_sendACK2(0x00);
+        start_bluetooth_IT();
         break;
     case 0x06:
         end_mode();
         bluetooth_sendACK2(0x00);
+        start_bluetooth_IT();
         break;
     case 0x10:
         if (flag == 0) {
@@ -136,6 +144,7 @@ void bluetooth_RxCallback(){
     // TODO: finish this
     
     default:
+        start_bluetooth_IT();
         break;
     }
 }
