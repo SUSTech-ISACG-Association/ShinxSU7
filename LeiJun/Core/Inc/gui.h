@@ -20,7 +20,7 @@ extern uint8_t waypoint_state;
  */
 void draw_button_text(uint16_t sx, uint16_t sy, uint16_t ex, uint16_t ey, uint8_t text_size, const char *text, button_area* button);
 
-void draw_button_image(uint16_t sx, uint16_t sy, uint16_t ex, uint16_t ey, const uint16_t *color);
+// void draw_button_image(uint16_t sx, uint16_t sy, uint16_t ex, uint16_t ey, const uint16_t *color);
 
 /**
  * @brief Draw UI for manual control mode
@@ -40,7 +40,7 @@ void draw_manual(float distance);
  * a button to switch between modes setting different elements:
  * 4 states: set_start, set_end, set_obstacles, set_waypoints
  */
-void draw_waypoint();
+// void draw_waypoint();
 
 
 /**
@@ -48,4 +48,4 @@ void draw_waypoint();
  * 
  * 2 buttons: start_sweep, start_race
  */
-void draw_auto();
+// void draw_auto();

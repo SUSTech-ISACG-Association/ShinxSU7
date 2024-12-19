@@ -67,11 +67,8 @@ void send_greeting()
     handle_ack2(receive_buffer);
 	LCD_ShowString(10, 290, 100, 16, 16, "draw manual");
     draw_manual(distance);
-	LCD_ShowString(10, 290, 100, 16, 16, "done       ");
+	LCD_ShowString(10, 290, 100, 16, 16, "done");
     need_greeting_flag = 0;
-	LCD_ShowString(10, 290, 100, 16, 16, "done flag  ");
-	return;
-	LCD_ShowString(10, 290, 100, 16, 16, "Unreachable");
 }
 
 uint8_t send_manual_inst()
@@ -143,12 +140,10 @@ uint8_t send_manual_inst()
     }
     else if (button_pressed & 0b0100) // back
     {
-        opcode = 0x10;
+        opcode = 0x06;
         HAL_UART_Transmit(huart, &opcode, 1, 0xffff);
         HAL_UART_Receive(huart, &receive_buffer, 1, 0xffff);
         // LF, LB, RF, RB
-        uint8_t control[4] = {-100, -100, -100, -100};
-        HAL_UART_Transmit(huart, control, 4, 0xffff);
     }
     else if (button_pressed & 0b0100) // rotR
     {
@@ -160,5 +155,5 @@ uint8_t send_manual_inst()
         HAL_UART_Transmit(huart, control, 4, 0xffff);
     }
     HAL_UART_Receive(huart, &receive_buffer, 1, 0xffff);
-	return 0x00; //TODO
+	return 0x00;
 }

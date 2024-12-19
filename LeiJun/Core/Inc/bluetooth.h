@@ -8,7 +8,6 @@ extern UART_HandleTypeDef *huart;
 extern uint16_t button_pressed;
 
 void send_greeting();
-void send_mode();
 uint8_t send_manual_inst();
 
 #endif

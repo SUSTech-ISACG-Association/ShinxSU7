@@ -265,7 +265,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     switch (GPIO_Pin) {
     case KEY0_Pin:
         if (HAL_GPIO_ReadPin(KEY0_GPIO_Port, KEY0_Pin) == GPIO_PIN_RESET) {
-			// KEY0 idle
+			// KEY0 for emergent stop
         }
         break;
     case KEY1_Pin:

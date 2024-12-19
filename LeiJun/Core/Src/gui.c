@@ -31,7 +31,7 @@ void draw_manual(float distance)
     draw_button_text(90, 180, 150, 240, 16, "Back", (button_manual + 7));
     draw_button_text(150, 180, 210, 240, 16, "RotR", (button_manual + 8));
     if (distance >= 0) { // negative distance means no obstacle detected, do not update
-        char distance_buffer[20];
+        char distance_buffer[50];
         sprintf(distance_buffer, "Distance: %.1f cm", distance);
         LCD_Fill_Window(10, 250, 100, 267, WHITE);
 		POINT_COLOR = BLACK;
