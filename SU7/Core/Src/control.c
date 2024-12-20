@@ -142,27 +142,83 @@ void save_goto(const Waypoint en)
     return;
 }
 
+uint8_t explore_dir(const direction_t dir)
+{
+    rotDirection(dir);
+    uint32_t tickstart = HAL_GetTick();
+    uint32_t wait = GO_1block_TIME;
+
+    /* Add a freq to guarantee minimum wait */
+    if (wait < HAL_MAX_DELAY)
+    {
+        wait += (uint32_t)(uwTickFreq);
+    }
+
+    uint8_t need_go_back = 0;
+    MOTOR_FORWARD(max_spd);
+    while ((HAL_GetTick() - tickstart) < wait)
+    {
+        if (HAL_GPIO_ReadPin(AVOID_LEFT_GPIO_Port, AVOID_LEFT_Pin) == GPIO_PIN_SET || HAL_GPIO_ReadPin(AVOID_RIGHT_GPIO_Port, AVOID_RIGHT_Pin) == GPIO_PIN_SET) {
+            need_go_back = 1;
+            break;
+        }
+        float dis = SonicDetectF();
+        if (dis < 40) {
+            need_go_back = 1;
+            break;
+        }
+        HAL_Delay(60);
+    }
+
+    if (need_go_back) {
+        uint32_t tick = (HAL_GetTick() - tickstart);
+        MOTOR_BACK(max_spd);
+        HAL_Delay(tick);
+        MOTOR_STOP();
+        return 0;
+    } else {
+        su7state.pos = (Waypoint){su7state.pos.x + dirx[dir], su7state.pos.y + diry[dir]};
+        return 1;
+    }
+
+    // Waypoint nx = (Waypoint){su7state.pos.x + dirx[dir], su7state.pos.y + diry[dir]};
+    // if (check_valid_eq(nx, SO_Unknown)) {
+    //     save_goto(nx);
+    //     return 1;
+    // }
+    // return 0;
+}
+
 void autoavoid_update()
 {
     Waypoint nx;
     for (uint32_t i = 0; i < ld; ++i) {
         nx = (Waypoint){su7state.pos.x + dirx[i], su7state.pos.y + diry[i]};
         if (check_valid_eq(nx, SO_Unknown)) {
-            rotDirection(ld);
-            // su7state.heading = ld;
-            float dis = SonicDetectF();
-            if (SQUARE_LENGTH_CM / 4 < dis && dis < SQUARE_LENGTH_CM * 1.5) {
+            if (explore_dir(ld)){
+                Scene_set_object(&ShinxScene1, nx.x, nx.y, SO_Empty);
+                es_push(nx);
+                break;
+            } else {
                 Scene_set_object(&ShinxScene1, nx.x, nx.y, SO_Obstacle);
                 uint8_t nn = nx.y * 4 + nx.x;
                 append_my_message(0x81, &nn, 1);
             }
-            else {
-                Scene_set_object(&ShinxScene1, nx.x, nx.y, SO_Empty);
-                es_push(nx);
-                // if (dis < SQUARE_LENGTH_CM * 2.5) {
-                //     Scene_set_object(&ShinxScene1, nx.x + dirx[i], nx.y + dirx[i], SO_Obstacle);
-                // } // TODO: an optimization
-            }
+            // rotDirection(ld);
+            // // su7state.heading = ld;
+            // float dis = SonicDetectF();
+            // if (SQUARE_LENGTH_CM / 4 < dis && dis < SQUARE_LENGTH_CM * 1.5) {
+            //     Scene_set_object(&ShinxScene1, nx.x, nx.y, SO_Obstacle);
+            //     uint8_t nn = nx.y * 4 + nx.x;
+            //     append_my_message(0x81, &nn, 1);
+            // }
+            // else {
+            //     Scene_set_object(&ShinxScene1, nx.x, nx.y, SO_Empty);
+            //     es_push(nx);
+            //     // if (dis < SQUARE_LENGTH_CM * 2.5) {
+            //     //     Scene_set_object(&ShinxScene1, nx.x + dirx[i], nx.y + dirx[i], SO_Obstacle);
+            //     // } // TODO: an optimization
+            // }
         }
     }
     if (es_head == 0) {
@@ -204,13 +260,13 @@ RE_UPDATE:
     switch (now_state) {
     case 0b000:
         if (race_state == TURNL_WAITING || race_state == TURNL) {
-            MOTOR_SPINL(max_spd);
+            MOTOR_SPINL(max_spd-20);
             while (HAL_GPIO_ReadPin(SEARCH_M_GPIO_Port, SEARCH_M_Pin) == GPIO_PIN_RESET)
                 ;
             goto RE_UPDATE;
         }
         else if (race_state == TURNR_WAITING || race_state == TURNR) {
-            MOTOR_SPINR(max_spd);
+            MOTOR_SPINR(max_spd-20);
             while (HAL_GPIO_ReadPin(SEARCH_M_GPIO_Port, SEARCH_M_Pin) == GPIO_PIN_RESET)
                 ;
             goto RE_UPDATE;
