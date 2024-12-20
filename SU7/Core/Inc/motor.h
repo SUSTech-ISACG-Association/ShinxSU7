@@ -7,16 +7,17 @@ extern TIM_HandleTypeDef htim4;
 
 #define __SetMotorSpeed(__CHANNEL__, __PORT__, __PIN__, __speed__)                                                     \
     do {                                                                                                               \
-        __HAL_TIM_SetCompare(&htim4, (__CHANNEL__), (72 * ((__speed__) < 0 ? -(__speed__) : 100 - (__speed__))));      \
+        __HAL_TIM_SetCompare(&htim4, (__CHANNEL__),                                                                    \
+                             (int32_t)(72 * ((__speed__) < 0 ? -(__speed__) : 100 - (__speed__))));                    \
         HAL_GPIO_WritePin((__PORT__), (__PIN__), ((__speed__) < 0 ? GPIO_PIN_SET : GPIO_PIN_RESET));                   \
     } while (0)
 #define __GetMotorSpeed(__CHANNEL__) __HAL_TIM_GetCompare(&htim4, (__CHANNEL__))
 
 #define SetMotorSpeedLF(speed)                                                                                         \
-    __SetMotorSpeed(TIM_CHANNEL_1, LEFT1_MOTOR_FORWARD_GPIO_Port, LEFT1_MOTOR_FORWARD_Pin, ((speed) - 5.7))
+    __SetMotorSpeed(TIM_CHANNEL_1, LEFT1_MOTOR_FORWARD_GPIO_Port, LEFT1_MOTOR_FORWARD_Pin, ((speed) * 0.94))
 
 #define SetMotorSpeedLB(speed)                                                                                         \
-    __SetMotorSpeed(TIM_CHANNEL_2, LEFT2_MOTOR_FORWARD_GPIO_Port, LEFT2_MOTOR_FORWARD_Pin, ((speed) - 5.7))
+    __SetMotorSpeed(TIM_CHANNEL_2, LEFT2_MOTOR_FORWARD_GPIO_Port, LEFT2_MOTOR_FORWARD_Pin, ((speed) * 0.94))
 
 #define SetMotorSpeedRF(speed)                                                                                         \
     __SetMotorSpeed(TIM_CHANNEL_3, RIGHT1_MOTOR_FORWARD_GPIO_Port, RIGHT1_MOTOR_FORWARD_Pin, speed)
@@ -40,8 +41,7 @@ extern TIM_HandleTypeDef htim4;
         SetMotorSpeedRB(speed);                                                                                        \
     } while (0)
 
-#define MOTOR_SPINR(speed)                                                                                             \
-    MOTOR_SPINL(-(speed))
+#define MOTOR_SPINR(speed) MOTOR_SPINL(-(speed))
 
 #define MOTOR_TURNL(speed)                                                                                             \
     do {                                                                                                               \
@@ -67,8 +67,7 @@ extern TIM_HandleTypeDef htim4;
         SetMotorSpeedRB(speed);                                                                                        \
     } while (0)
 
-#define MOTOR_BACK(speed)                                                                                              \
-    MOTOR_FORWARD(-(speed))
+#define MOTOR_BACK(speed) MOTOR_FORWARD(-(speed))
 
 #define MOTOR_LEFT(speed)                                                                                              \
     do {                                                                                                               \

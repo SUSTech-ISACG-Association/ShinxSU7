@@ -627,9 +627,12 @@ uint8_t set_auto_race_mode(){
 void start_mode(){
   wayi = 0;
   SU7Running = 1;
+  
+  control_init();
 }
 void end_mode() {
   SU7Running = 0;
+  MOTOR_STOP();
 }
 void toggle_mode() {
   if (SU7Running) {

@@ -9,7 +9,7 @@ static int32_t dirx[] = {0, 1, 0, -1};
 static int32_t diry[] = {-1, 0, 1, 0};
 static uint32_t ld = 4;
 
-static const int16_t max_spd = 90;
+static const int16_t max_spd = 100;
 
 void rotDirection(const direction_t dir)
 {
@@ -309,10 +309,10 @@ RE_UPDATE:
         break;
     }
     if (race_state == TURNL) {
-        MOTOR_FORWARD_L(max_spd, max_spd);
+        MOTOR_FORWARD_L(max_spd-20, max_spd-20);
     }
     else if (race_state == TURNR) {
-        MOTOR_FORWARD_R(max_spd, max_spd);
+        MOTOR_FORWARD_R(max_spd-20, max_spd-20);
     }
     else {
         MOTOR_FORWARD(max_spd);
@@ -322,6 +322,8 @@ RE_UPDATE:
 void control_init()
 {
     su7state = (SU7State_t){{0, 0}, 0};
+    race_state = FOLLOWING;
+    es_head = 0;
     Scene_destroy(&ShinxScene1);
     Scene_init(&ShinxScene1);
 }
