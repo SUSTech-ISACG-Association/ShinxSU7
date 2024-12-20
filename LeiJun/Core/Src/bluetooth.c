@@ -8,11 +8,7 @@ extern uint8_t LeiJun_mode;
 // set by tim3 per 500 ms, sent within while(1) in main()
 uint8_t need_greeting_flag = 0;
 
-// manual
-// turnL	forward		turnR
-// left		 stop		right
-// rotL		 back		rotR
-uint16_t button_pressed = 0x0000;
+
 
 void handle_ack2(uint8_t ack2)
 {
@@ -42,34 +38,28 @@ void handle_ack2(uint8_t ack2)
     }
 }
 
-void send_greeting()
+float get_distance()
 {
     uint8_t opcode = 0x00;
     uint8_t receive_buffer;
     float distance = 0;
-    LCD_ShowString(10, 290, 100, 16, 16, "send 0x00");
     HAL_UART_Transmit(huart, &opcode, 1, 0xffff); // send Greeting
-    LCD_ShowString(10, 290, 100, 16, 16, "recv Ack2");
     HAL_UART_Receive(huart, &receive_buffer, 1, 0xffff); // recv ACK2
-    LCD_ShowString(10, 290, 100, 16, 16, "wait Ack2");
     handle_ack2(receive_buffer); // TODO: handle error ACK2
     opcode = 0x80;
-    LCD_ShowString(10, 290, 100, 16, 16, "send 0x80");
     HAL_UART_Transmit(huart, &opcode, 1, 0xffff); // send GET distance
-    LCD_ShowString(10, 290, 100, 16, 16, "recv ack1");
     HAL_UART_Receive(huart, &receive_buffer, 1, 0xffff); // recv ACK1
                                                          // TODO: handle error ACK1
-    LCD_ShowString(10, 290, 100, 16, 16, "recv dist");
     HAL_UART_Receive(huart, &distance, 4, 0xffff); // recv distance data
-    LCD_ShowString(10, 290, 100, 16, 16, "recv ack2");
     HAL_UART_Receive(huart, &receive_buffer, 1, 0xffff); // recv ACK2
-    LCD_ShowString(10, 290, 100, 16, 16, "wait ack2");
     handle_ack2(receive_buffer);
-    LCD_ShowString(10, 290, 100, 16, 16, "draw manual");
-    draw_manual(distance);
-    LCD_ShowString(10, 290, 100, 16, 16, "done");
+    return distance;
 }
-
+// manual
+// turnL	forward		turnR
+// left		 stop		right
+// rotL		 back		rotR
+uint16_t button_pressed = 0x0000;
 uint8_t send_manual_inst()
 {
     uint8_t opcode = 0x00;

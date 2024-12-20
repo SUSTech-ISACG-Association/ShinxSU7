@@ -5,13 +5,23 @@
  * [9-24]	button_map: 16 * grids for setting waypoints/obstacles/start/end
  * [25-26]	button_auto: auto-avoid + auto-race
  */
-button_area button_manual[9], button_map[16], button_auto[2];
+button_area button_manual[9], button_map[16], button_auto[2], button_clear, button_go;
+
+uint8_t start, end = 0x00;
+
+/**
+ * @brief bitmap of obstacles, 1 means obstacle, 0 means no obstacle
+ *
+ */
+uint16_t obstacles = 0x0000;
+
+/**
+ * @brief list of waypoints, id stored in order of start -> end
+ *
+ */
+uint8_t waypoint_list[16];
 
 extern uint8_t LeiJun_mode;
-
-#define WITHIN_BUTTON(x, y, button_instance)                                                                           \
-    ((((button_instance.sx) <= (x)) && ((x) <= (button_instance.ex))) ||                                               \
-     (((button_instance.sy) <= (y)) && ((y) <= (button_instance.ey))))
 
 uint16_t which_button_pressed_manual(_m_tp_dev *p)
 {
@@ -38,6 +48,7 @@ uint16_t which_button_pressed_waypoint(_m_tp_dev *p)
     }
     return result;
 }
+
 uint16_t which_button_pressed_auto(_m_tp_dev *p)
 {
     uint16_t result = 0x0000;

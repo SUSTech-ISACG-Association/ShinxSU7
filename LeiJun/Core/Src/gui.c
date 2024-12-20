@@ -2,9 +2,11 @@
 #include <stdio.h>
 #include <string.h>
 
+extern uint8_t start, end;
 extern uint8_t LeiJun_mode;
-extern uint8_t waypoint_state = 0;
-uint16_t obstacles = 0x0000;
+extern uint8_t waypoint_state;
+extern uint16_t obstacles = 0x0000;
+extern uint8_t waypoint_list[16];
 
 void draw_button_text(uint16_t sx, uint16_t sy, uint16_t ex, uint16_t ey, uint8_t text_size, const char *text,
                       button_area *button)
@@ -13,7 +15,8 @@ void draw_button_text(uint16_t sx, uint16_t sy, uint16_t ex, uint16_t ey, uint8_
     button->ey = ey;
     button->sx = sx;
     button->sy = sy;
-    LCD_Fill_Window(sx, sy, ex, ey, BUTTON_BACK_COLOR);
+    LCD_Fill_Window(sx, sy, ex, ey, BUTTON_EDGE_COLOR);
+    LCD_Fill_Window(sx + 1, sy + 1, ex - 1, ey - 1, BUTTON_BACK_COLOR);
     uint16_t text_sx = sx + (((ex - sx) - (strlen(text) * text_size >> 1)) >> 1);
     uint16_t text_sy = sy + (((ey - sy) - text_size) >> 1);
     POINT_COLOR = BUTTON_TEXT_COLOR;
@@ -26,7 +29,31 @@ void draw_button_color(uint16_t sx, uint16_t sy, uint16_t ex, uint16_t ey, const
     button->ey = ey;
     button->sx = sx;
     button->sy = sy;
-    LCD_Fill_Window(sx, sy, ex, ey, color);
+    LCD_Fill_Window(sx, sy, ex, ey, INVERT_RGB565(color));
+    LCD_Fill_Window(sx + 1, sy + 1, ex - 1, ey - 1, color);
+}
+
+void draw_waypoint_objects()
+{
+    for (int i = 0; i < 16; i++) {
+        if (start == i) {
+            draw_button_text(button_map[i].sx, button_map[i].sy, button_map[i].ex, button_map[i].ey, 16, "S",
+                             (button_map + i));
+        }
+        else if (end == i) {
+            draw_button_text(button_map[i].sx, button_map[i].sy, button_map[i].ex, button_map[i].ey, 16, "E",
+                             (button_map + i));
+        }
+        else if (obstacles & (1 << i)) {
+            draw_button_color(button_map[i].sx, button_map[i].sy, button_map[i].ex, button_map[i].ey, RED,
+                              (button_map + i));
+        }
+        else {
+            draw_button_color(button_map[i].sx, button_map[i].sy, button_map[i].ex, button_map[i].ey, BUTTON_BACK_COLOR,
+                              (button_map + i));
+        }
+    }
+	// TODO: draw arrows of waypoint list.
 }
 
 void draw_manual(float distance)
@@ -55,14 +82,7 @@ void draw_waypoint()
     LCD_ShowString(56, 10, 150, 16, 16, "Waypoint Control");
     for (int i = 0; i < 4; i++) {
         for (int j = 0; j < 4; j++) {
-            char button_text[2];
-            sprintf(button_text, "%d", i * 4 + j);
-            if (obstacles & (1 << (i * 4 + j))) {
-                draw_button_color(20 + j * 50, 60 + i * 50, 70 + j * 60, 110 + i * 50, RED, (button_map + i * 4 + j));
-            }
-            else {
-                draw_button_color(20 + j * 50, 60 + i * 50, 70 + j * 60, 110 + i * 50, GREEN, (button_map + i * 4 + j));
-            }
+            draw_button_color(20 + j * 50, 60 + i * 50, 70 + j * 60, 110 + i * 50, BLACK, (button_map + i * 4 + j));
         }
     }
     char mode_text[20];
@@ -80,4 +100,7 @@ void draw_waypoint()
     }
     POINT_COLOR = BLACK;
     LCD_ShowString(10, 270, 200, 16, 16, mode_text);
+    draw_button_text(120, 270, 160, 310, 16, "Clear", &button_clear);
+    draw_button_text(180, 270, 220, 310, 16, "Go", &button_go);
+    draw_waypoint_objects();
 }
