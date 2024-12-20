@@ -5,7 +5,7 @@
 extern uint8_t start, end;
 extern uint8_t LeiJun_mode;
 extern uint8_t waypoint_state;
-extern uint16_t obstacles = 0x0000;
+extern uint16_t obstacles;
 extern uint8_t waypoint_list[16];
 
 void draw_button_text(uint16_t sx, uint16_t sy, uint16_t ex, uint16_t ey, uint8_t text_size, const char *text,
