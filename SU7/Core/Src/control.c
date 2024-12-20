@@ -96,7 +96,7 @@ uint8_t check_valid_neq(const Waypoint pos, const SceneObject so)
     return Scene_get_object(&ShinxScene1, pos.x, pos.y) != so;
 }
 
-void save_goto(const Waypoint en)
+void safe_goto(const Waypoint en)
 {
     int32_t dx = en.x - su7state.pos.x;
     int32_t dy = en.y - su7state.pos.y;
@@ -183,7 +183,7 @@ uint8_t explore_dir(const direction_t dir)
 
     // Waypoint nx = (Waypoint){su7state.pos.x + dirx[dir], su7state.pos.y + diry[dir]};
     // if (check_valid_eq(nx, SO_Unknown)) {
-    //     save_goto(nx);
+    //     safe_goto(nx);
     //     return 1;
     // }
     // return 0;
@@ -237,12 +237,12 @@ void autoavoid_update()
         }
     }
     if (es_head == 0) {
-        save_goto(autoavoid_end);
+        safe_goto(autoavoid_end);
         end_mode();
         return;
     }
     nx = es_get();
-    save_goto(nx);
+    safe_goto(nx);
     es_pop();
 }
 
