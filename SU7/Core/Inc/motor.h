@@ -125,4 +125,12 @@ extern TIM_HandleTypeDef htim4;
         SetMotorSpeedRB(-(speed_back) + (speed_R));                                                                    \
     } while (0)
 
+#define MOTOR_SET_SPD(speed_L, speed_R)                                                                                \
+    do {                                                                                                               \
+        SetMotorSpeedLF((speed_L));                                                                                    \
+        SetMotorSpeedLB((speed_L));                                                                                    \
+        SetMotorSpeedRF((speed_R));                                                                                    \
+        SetMotorSpeedRB((speed_R));                                                                                    \
+    } while (0)
+
 #endif

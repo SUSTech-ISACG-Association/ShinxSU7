@@ -132,6 +132,26 @@ int main(void)
   HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_RESET);
 
   Scene_init(&ShinxScene1);
+
+  // !Test
+  HAL_Delay(500);
+  goDirection(X_POSITIVE);
+  HAL_Delay(1000);
+  goDirection(X_POSITIVE);
+  HAL_Delay(1000);
+  goDirection(X_NEGATIVE);
+  HAL_Delay(1000);
+  goDirection(X_NEGATIVE);
+  HAL_Delay(1000);
+  goDirection(Y_POSITIVE);
+  HAL_Delay(1000);
+  goDirection(Y_POSITIVE);
+  HAL_Delay(1000);
+  goDirection(Y_NEGATIVE);
+  HAL_Delay(1000);
+  goDirection(Y_NEGATIVE);
+  HAL_Delay(1000);
+  
   /* USER CODE END 2 */
 
   /* Infinite loop */

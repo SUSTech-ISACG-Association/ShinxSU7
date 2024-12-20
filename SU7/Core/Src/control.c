@@ -1,9 +1,11 @@
 #include "control.h"
+#include "led.h"
+#include "limits.h"
 #include "message_buffer.h"
 #include "motor.h"
 #include "scene.h"
-#include "led.h"
 #include "sonic.h"
+#include "math.h"
 
 SU7State_t su7state = {{0, 0}, 0};
 static int32_t dirx[4] = {0, 1, 0, -1};
@@ -30,12 +32,144 @@ void rotDirection(const direction_t dir)
     MOTOR_STOP();
     su7state.heading = dir;
 }
+
+// State used while calibrating the orientation
+typedef enum {
+    CalibState_Entering,
+    CalibState_SpinL,
+    CalibState_SpinR,
+    CalibState_PassingThrough,
+    CalibState_Exiting,
+    CalibState_Complete,
+} CalibState_t;
+
+static inline uint8_t calibrateReadSearchState()
+{
+    uint8_t now_stateL = HAL_GPIO_ReadPin(SEARCH_L_GPIO_Port, SEARCH_L_Pin) == GPIO_PIN_SET;
+    uint8_t now_stateM = HAL_GPIO_ReadPin(SEARCH_M_GPIO_Port, SEARCH_M_Pin) == GPIO_PIN_SET;
+    uint8_t now_stateR = HAL_GPIO_ReadPin(SEARCH_R_GPIO_Port, SEARCH_R_Pin) == GPIO_PIN_SET;
+    uint8_t now_state = (now_stateL << 2) | (now_stateM << 1) | now_stateR;
+    return now_state;
+}
+
+#define CALIB_TIME_DECAY_COEFF 0.75f
+static uint32_t calib1BlkTime = 0;
+
+// Spin until SU7 faces right toward the next square
+// i.e., the current orientation makes a 90 degree angle
+// relative to the borderline of the current square
+void autopilotCalibrate()
+{
+    // We make the assumption that the first time we
+    // come across a border, our orientation must be
+    // 90 degrees to that borderline
+
+    // First set to forward and record the startTick of forward
+    // which will later be used to calibrate the speed
+    MOTOR_FORWARD(max_spd);
+    uint32_t enterStartTick = HAL_GetTick();
+    uint32_t enterEndTick = 0;
+    uint32_t exitStartTick = 0;
+    uint32_t exitEndTick = 0;
+
+    CalibState_t state = CalibState_Entering;
+
+    while (state != CalibState_Complete) {
+        uint8_t searchState = calibrateReadSearchState();
+
+        if (searchState != 0b000 && enterEndTick == 0)
+        {
+            enterEndTick = HAL_GetTick();
+        }
+        if (state == CalibState_PassingThrough && exitStartTick == 0)
+        {
+            exitStartTick = HAL_GetTick();
+        }
+
+        MOTOR_STOP();
+        LED0_Write(state&1);
+        LED1_Write((state>>2)&1);
+        HAL_Delay(1000);
+
+        switch (searchState) {
+        case 0b000:
+            // Continue
+            if (state != CalibState_PassingThrough && state != CalibState_Exiting)
+                state = CalibState_Entering;
+            else
+                state = CalibState_Exiting;
+            break;
+        case 0b111:
+            // Passing the borderline and do nothing
+            state = CalibState_PassingThrough;
+            break;
+        case 0b011:
+        case 0b001:
+            if (state == CalibState_Entering)
+                state = CalibState_SpinL;
+            break;
+        case 0b100:
+        case 0b110:
+            if (state == CalibState_Entering)
+                state = CalibState_SpinR;
+            break;
+        case 0b010:
+        case 0b101:
+            // Skip
+            break;
+        }
+
+        switch (state) {
+        case CalibState_Entering:
+            LED0_Write(1);
+            LED1_Write(0);
+            MOTOR_FORWARD(max_spd);
+            break;
+        case CalibState_PassingThrough:
+            LED0_Write(0);
+            LED1_Write(1);
+            MOTOR_FORWARD(max_spd);
+            break;
+        case CalibState_Exiting:
+            LED0_Write(1);
+            LED1_Write(1);
+            if (HAL_GetTick() - exitStartTick > enterEndTick - enterStartTick)
+            {
+                state = CalibState_Complete;
+                MOTOR_STOP();
+            }
+            else
+            {
+                MOTOR_FORWARD(max_spd);
+            }
+            break;
+        case CalibState_SpinL:
+            // MOTOR_SPINL(max_spd - 20);
+            MOTOR_SET_SPD(max_spd - 20, -(max_spd - 30));
+            break;
+        case CalibState_SpinR:
+            // MOTOR_SPINR(max_spd - 20);
+            MOTOR_SET_SPD(-(max_spd - 20), (max_spd - 20));
+            break;
+        case CalibState_Complete:
+            LED0_Write(0);
+            LED1_Write(0);
+            MOTOR_STOP();
+            break;
+        }
+    }
+    // Update current 1-block-required time based on #ticks elapsed
+    uint32_t tickElapsed = exitEndTick - enterStartTick;
+    if (calib1BlkTime == 0)
+        calib1BlkTime = tickElapsed;
+    else
+        calib1BlkTime = (uint32_t)(tickElapsed * (1 - CALIB_TIME_DECAY_COEFF) + calib1BlkTime * CALIB_TIME_DECAY_COEFF);
+}
+
 void goDirection(const direction_t dir)
 {
     rotDirection(dir);
-    MOTOR_FORWARD(max_spd);
-    HAL_Delay(GO_1block_TIME);
-    MOTOR_STOP();
+    autopilotCalibrate();
     su7state.pos.x += dirx[dir];
     su7state.pos.y += diry[dir];
 }
