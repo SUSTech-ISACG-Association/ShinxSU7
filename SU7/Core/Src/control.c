@@ -2,6 +2,7 @@
 #include "message_buffer.h"
 #include "motor.h"
 #include "scene.h"
+#include "led.h"
 #include "sonic.h"
 
 SU7State_t su7state = {{0, 0}, 0};
@@ -147,17 +148,17 @@ void safe_goto(const Waypoint en)
         }
     }
 
-    HAL_GPIO_TogglePin(LED0_GPIO_Port, LED0_Pin);
-    HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
+    LED0_Write(0);
+    LED1_Write(0);
     HAL_Delay(200);
-    HAL_GPIO_TogglePin(LED0_GPIO_Port, LED0_Pin);
-    HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
+    LED0_Write(1);
+    LED1_Write(1);
     HAL_Delay(200);
-    HAL_GPIO_TogglePin(LED0_GPIO_Port, LED0_Pin);
-    HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
+    LED0_Write(0);
+    LED1_Write(0);
     HAL_Delay(200);
-    HAL_GPIO_TogglePin(LED0_GPIO_Port, LED0_Pin);
-    HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
+    LED0_Write(1);
+    LED1_Write(1);
     return;
 }
 
