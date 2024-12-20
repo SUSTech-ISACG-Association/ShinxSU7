@@ -302,8 +302,9 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
       set_auto_avoid_mode();
       toggle_mode();
     }
-    while(HAL_GPIO_ReadPin(KEY1_GPIO_Port, KEY1_Pin) == GPIO_PIN_RESET);
-      HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, GPIO_PIN_RESET);
+    while(HAL_GPIO_ReadPin(KEY1_GPIO_Port, KEY1_Pin) == GPIO_PIN_RESET)
+      ;
+    HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, GPIO_PIN_RESET);
     break;
   case KEY2_Pin:
     HAL_Delay(50);
@@ -311,8 +312,9 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
       set_auto_race_mode();
       toggle_mode();
     }
-    while(HAL_GPIO_ReadPin(KEY2_GPIO_Port, KEY2_Pin) == GPIO_PIN_RESET);
-      HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_RESET);
+    while(HAL_GPIO_ReadPin(KEY2_GPIO_Port, KEY2_Pin) == GPIO_PIN_RESET)
+      ;
+    HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_RESET);
     break;
   case KEY3_Pin:
     HAL_Delay(50);

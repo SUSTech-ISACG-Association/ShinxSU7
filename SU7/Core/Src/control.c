@@ -2,6 +2,7 @@
 #include "message_buffer.h"
 #include "motor.h"
 #include "scene.h"
+#include "led.h"
 #include "sonic.h"
 
 SU7State_t su7state = {{0, 0}, 0};
@@ -144,17 +145,17 @@ void safe_goto(const Waypoint en)
         }
     }
 
-    HAL_GPIO_TogglePin(LED0_GPIO_Port, LED0_Pin);
-    HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
+    LED0_Write(0);
+    LED1_Write(0);
     HAL_Delay(200);
-    HAL_GPIO_TogglePin(LED0_GPIO_Port, LED0_Pin);
-    HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
+    LED0_Write(1);
+    LED1_Write(1);
     HAL_Delay(200);
-    HAL_GPIO_TogglePin(LED0_GPIO_Port, LED0_Pin);
-    HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
+    LED0_Write(0);
+    LED1_Write(0);
     HAL_Delay(200);
-    HAL_GPIO_TogglePin(LED0_GPIO_Port, LED0_Pin);
-    HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
+    LED0_Write(1);
+    LED1_Write(1);
     return;
 }
 
@@ -203,27 +204,27 @@ uint8_t explore_dir(const direction_t dir)
 void autoavoid_update()
 {
     Waypoint nx;
-    HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, (su7state.pos.x&2) >> 1);
-    HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, su7state.pos.x&1);
+    LED0_Write(0);
+    LED1_Write(0);
+    LED0_Write((su7state.pos.x & 2) >> 1);
+    LED1_Write(su7state.pos.x & 1);
     HAL_Delay(1000);
-    HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, (su7state.pos.y&2) >> 1);
-    HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, su7state.pos.y&1);
+    LED0_Write((su7state.pos.y & 2) >> 1);
+    LED1_Write(su7state.pos.y & 1);
     HAL_Delay(1000);
-    HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, (su7state.heading&2) >> 1);
-    HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, su7state.heading&1);
+    LED0_Write((su7state.heading & 2) >> 1);
+    LED1_Write(su7state.heading & 1);
     HAL_Delay(1000);
     for (uint32_t i = 0; i < ld; ++i) {
         nx = (Waypoint){su7state.pos.x + dirx[i], su7state.pos.y + diry[i]};
         if (check_valid_eq(nx, SO_Unknown)) {
-            HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, (i&2) >> 1);
-            HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, i&1);
+            LED0_Write((i & 2) >> 1);
+            LED1_Write(i & 1);
             HAL_Delay(1000);
             if (explore_dir(i)) {
-                
-                HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, GPIO_PIN_RESET);
-                HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_SET);
+
+                LED0_Write(1);
+                LED1_Write(0);
                 // HAL_Delay(1000);
                 Scene_set_object(&ShinxScene1, nx.x, nx.y, SO_Empty);
                 es_push(nx);
@@ -236,8 +237,8 @@ void autoavoid_update()
             }
         }
     }
-    HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, GPIO_PIN_SET);
-    HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_RESET);
+    LED0_Write(0);
+    LED1_Write(1);
     if (es_head == 0) {
         for (int32_t i = 0; i < SCENE_COORDS_MAX_X && es_head == 0; ++i) {
             for (int32_t j = 0; j < SCENE_COORDS_MAX_Y && es_head == 0; ++j) {
@@ -258,7 +259,7 @@ void autoavoid_update()
         end_mode();
         return;
     }
-    
+
     HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, GPIO_PIN_SET);
     HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_SET);
     nx = es_get();
