@@ -14,6 +14,10 @@ static const int16_t max_spd = 90;
 void rotDirection(const direction_t dir)
 {
     float ang = Direction2float(dir) - Direction2float(su7state.heading);
+    if (ang > 180)
+        ang -= 360;
+    else if (ang < -180)
+        ang += 360;
     if (ang < 0) {
         MOTOR_SPINL(max_spd);
         HAL_Delay(ROT_1d_TIME * (-ang));
@@ -131,7 +135,7 @@ void save_goto(const Waypoint en)
             for (uint32_t i = 0; i < ld; ++i) {
                 ne = (Waypoint){nx.x + dirx[i], nx.y + diry[i]};
                 if (check_valid_neq(ne, SO_Obstacle) && check_valid_neq(ne, SO_Unknown) && vis[ne.x][ne.y] == 0) {
-                    nxt[ne.x][ne.y] = ld ^ 2;
+                    nxt[ne.x][ne.y] = i ^ 2;
                     explore_queue[eq_tail] = ne;
                     eq_tail = (eq_tail + 1) % es_len;
                     vis[ne.x][ne.y] = 1;
@@ -158,16 +162,15 @@ uint8_t explore_dir(const direction_t dir)
     MOTOR_FORWARD(max_spd);
     while ((HAL_GetTick() - tickstart) < wait)
     {
-        if (HAL_GPIO_ReadPin(AVOID_LEFT_GPIO_Port, AVOID_LEFT_Pin) == GPIO_PIN_SET || HAL_GPIO_ReadPin(AVOID_RIGHT_GPIO_Port, AVOID_RIGHT_Pin) == GPIO_PIN_SET) {
+        if (HAL_GPIO_ReadPin(AVOID_LEFT_GPIO_Port, AVOID_LEFT_Pin) == GPIO_PIN_RESET || HAL_GPIO_ReadPin(AVOID_RIGHT_GPIO_Port, AVOID_RIGHT_Pin) == GPIO_PIN_RESET) {
             need_go_back = 1;
             break;
         }
-        float dis = SonicDetectF();
+        float dis = FastSonicDetect(3, 40);
         if (dis < 40) {
             need_go_back = 1;
             break;
         }
-        HAL_Delay(60);
     }
 
     if (need_go_back) {
@@ -195,7 +198,7 @@ void autoavoid_update()
     for (uint32_t i = 0; i < ld; ++i) {
         nx = (Waypoint){su7state.pos.x + dirx[i], su7state.pos.y + diry[i]};
         if (check_valid_eq(nx, SO_Unknown)) {
-            if (explore_dir(ld)){
+            if (explore_dir(i)){
                 Scene_set_object(&ShinxScene1, nx.x, nx.y, SO_Empty);
                 es_push(nx);
                 break;

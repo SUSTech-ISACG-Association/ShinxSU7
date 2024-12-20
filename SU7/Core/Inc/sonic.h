@@ -9,4 +9,6 @@ float SonicDetect(float angle);
 #define SonicDetectL() SonicDetect(135)
 #define SonicDetectR() SonicDetect(45)
 
+float FastSonicDetect(uint32_t times, uint32_t max_val);
+
 #endif

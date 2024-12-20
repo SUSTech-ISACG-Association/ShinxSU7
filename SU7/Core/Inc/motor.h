@@ -13,10 +13,10 @@ extern TIM_HandleTypeDef htim4;
 #define __GetMotorSpeed(__CHANNEL__) __HAL_TIM_GetCompare(&htim4, (__CHANNEL__))
 
 #define SetMotorSpeedLF(speed)                                                                                         \
-    __SetMotorSpeed(TIM_CHANNEL_1, LEFT1_MOTOR_FORWARD_GPIO_Port, LEFT1_MOTOR_FORWARD_Pin, (speed-2))
+    __SetMotorSpeed(TIM_CHANNEL_1, LEFT1_MOTOR_FORWARD_GPIO_Port, LEFT1_MOTOR_FORWARD_Pin, ((speed) - 5.7))
 
 #define SetMotorSpeedLB(speed)                                                                                         \
-    __SetMotorSpeed(TIM_CHANNEL_2, LEFT2_MOTOR_FORWARD_GPIO_Port, LEFT2_MOTOR_FORWARD_Pin, (speed-2))
+    __SetMotorSpeed(TIM_CHANNEL_2, LEFT2_MOTOR_FORWARD_GPIO_Port, LEFT2_MOTOR_FORWARD_Pin, ((speed) - 5.7))
 
 #define SetMotorSpeedRF(speed)                                                                                         \
     __SetMotorSpeed(TIM_CHANNEL_3, RIGHT1_MOTOR_FORWARD_GPIO_Port, RIGHT1_MOTOR_FORWARD_Pin, speed)
@@ -34,19 +34,14 @@ extern TIM_HandleTypeDef htim4;
 
 #define MOTOR_SPINL(speed)                                                                                             \
     do {                                                                                                               \
-        SetMotorSpeedLF(-speed);                                                                                       \
-        SetMotorSpeedLB(-speed);                                                                                       \
+        SetMotorSpeedLF(-(speed));                                                                                     \
+        SetMotorSpeedLB(-(speed));                                                                                     \
         SetMotorSpeedRF(speed);                                                                                        \
         SetMotorSpeedRB(speed);                                                                                        \
     } while (0)
 
 #define MOTOR_SPINR(speed)                                                                                             \
-    do {                                                                                                               \
-        SetMotorSpeedLF(speed);                                                                                        \
-        SetMotorSpeedLB(speed);                                                                                        \
-        SetMotorSpeedRF(-speed);                                                                                       \
-        SetMotorSpeedRB(-speed);                                                                                       \
-    } while (0)
+    MOTOR_SPINL(-(speed))
 
 #define MOTOR_TURNL(speed)                                                                                             \
     do {                                                                                                               \
@@ -73,26 +68,21 @@ extern TIM_HandleTypeDef htim4;
     } while (0)
 
 #define MOTOR_BACK(speed)                                                                                              \
-    do {                                                                                                               \
-        SetMotorSpeedLF(-speed);                                                                                       \
-        SetMotorSpeedLB(-speed);                                                                                       \
-        SetMotorSpeedRF(-speed);                                                                                       \
-        SetMotorSpeedRB(-speed);                                                                                       \
-    } while (0)
+    MOTOR_FORWARD(-(speed))
 
 #define MOTOR_LEFT(speed)                                                                                              \
     do {                                                                                                               \
-        SetMotorSpeedLF(-speed);                                                                                       \
+        SetMotorSpeedLF(-(speed));                                                                                     \
         SetMotorSpeedLB(speed);                                                                                        \
         SetMotorSpeedRF(speed);                                                                                        \
-        SetMotorSpeedRB(-speed);                                                                                       \
+        SetMotorSpeedRB(-(speed));                                                                                     \
     } while (0)
 
 #define MOTOR_RIGHT(speed)                                                                                             \
     do {                                                                                                               \
         SetMotorSpeedLF(speed);                                                                                        \
-        SetMotorSpeedLB(-speed);                                                                                       \
-        SetMotorSpeedRF(-speed);                                                                                       \
+        SetMotorSpeedLB(-(speed));                                                                                     \
+        SetMotorSpeedRF(-(speed));                                                                                     \
         SetMotorSpeedRB(speed);                                                                                        \
     } while (0)
 
@@ -106,8 +96,8 @@ extern TIM_HandleTypeDef htim4;
 
 #define MOTOR_FORWARD_L(speed_forward, speed_L)                                                                        \
     do {                                                                                                               \
-        SetMotorSpeedLF(speed_forward - speed_L);                                                                      \
-        SetMotorSpeedLB(speed_forward - speed_L);                                                                      \
+        SetMotorSpeedLF((speed_forward) - (speed_L));                                                                  \
+        SetMotorSpeedLB((speed_forward) - (speed_L));                                                                  \
         SetMotorSpeedRF(speed_forward);                                                                                \
         SetMotorSpeedRB(speed_forward);                                                                                \
     } while (0)
@@ -116,24 +106,24 @@ extern TIM_HandleTypeDef htim4;
     do {                                                                                                               \
         SetMotorSpeedLF(speed_forward);                                                                                \
         SetMotorSpeedLB(speed_forward);                                                                                \
-        SetMotorSpeedRF(speed_forward - speed_R);                                                                      \
-        SetMotorSpeedRB(speed_forward - speed_R);                                                                      \
+        SetMotorSpeedRF((speed_forward) - (speed_R));                                                                  \
+        SetMotorSpeedRB((speed_forward) - (speed_R));                                                                  \
     } while (0)
 
 #define MOTOR_BACK_L(speed_back, speed_L)                                                                              \
     do {                                                                                                               \
-        SetMotorSpeedLF(-speed_back + speed_L);                                                                        \
-        SetMotorSpeedLB(-speed_back + speed_L);                                                                        \
-        SetMotorSpeedRF(-speed_back);                                                                                  \
-        SetMotorSpeedRB(-speed_back);                                                                                  \
+        SetMotorSpeedLF(-(speed_back) + (speed_L));                                                                    \
+        SetMotorSpeedLB(-(speed_back) + (speed_L));                                                                    \
+        SetMotorSpeedRF(-(speed_back));                                                                                \
+        SetMotorSpeedRB(-(speed_back));                                                                                \
     } while (0)
 
 #define MOTOR_BACK_R(speed_back, speed_R)                                                                              \
     do {                                                                                                               \
-        SetMotorSpeedLF(-speed_back);                                                                                  \
-        SetMotorSpeedLB(-speed_back);                                                                                  \
-        SetMotorSpeedRF(-speed_back + speed_R);                                                                        \
-        SetMotorSpeedRB(-speed_back + speed_R);                                                                        \
+        SetMotorSpeedLF(-(speed_back));                                                                                \
+        SetMotorSpeedLB(-(speed_back));                                                                                \
+        SetMotorSpeedRF(-(speed_back) + (speed_R));                                                                    \
+        SetMotorSpeedRB(-(speed_back) + (speed_R));                                                                    \
     } while (0)
 
 #endif
