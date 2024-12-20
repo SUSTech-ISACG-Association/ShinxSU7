@@ -14,10 +14,10 @@ extern TIM_HandleTypeDef htim4;
 #define __GetMotorSpeed(__CHANNEL__) __HAL_TIM_GetCompare(&htim4, (__CHANNEL__))
 
 #define SetMotorSpeedLF(speed)                                                                                         \
-    __SetMotorSpeed(TIM_CHANNEL_1, LEFT1_MOTOR_FORWARD_GPIO_Port, LEFT1_MOTOR_FORWARD_Pin, ((speed) * 0.94))
+    __SetMotorSpeed(TIM_CHANNEL_1, LEFT1_MOTOR_FORWARD_GPIO_Port, LEFT1_MOTOR_FORWARD_Pin, ((speed) * 0.96))
 
 #define SetMotorSpeedLB(speed)                                                                                         \
-    __SetMotorSpeed(TIM_CHANNEL_2, LEFT2_MOTOR_FORWARD_GPIO_Port, LEFT2_MOTOR_FORWARD_Pin, ((speed) * 0.94))
+    __SetMotorSpeed(TIM_CHANNEL_2, LEFT2_MOTOR_FORWARD_GPIO_Port, LEFT2_MOTOR_FORWARD_Pin, ((speed) * 0.96))
 
 #define SetMotorSpeedRF(speed)                                                                                         \
     __SetMotorSpeed(TIM_CHANNEL_3, RIGHT1_MOTOR_FORWARD_GPIO_Port, RIGHT1_MOTOR_FORWARD_Pin, speed)

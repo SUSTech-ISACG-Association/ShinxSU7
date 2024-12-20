@@ -102,40 +102,43 @@ uint8_t check_valid_neq(const Waypoint pos, const SceneObject so)
 
 void safe_goto(const Waypoint en)
 {
+    static Waypoint explore_queue[SCENE_COORDS_MAX_X * SCENE_COORDS_MAX_Y * 4];
+    static uint32_t eq_head, eq_tail;
+    static uint8_t vis[SCENE_COORDS_MAX_X+5][SCENE_COORDS_MAX_Y+5];
+    static direction_t nxt[SCENE_COORDS_MAX_X+5][SCENE_COORDS_MAX_Y+5];
+
     int32_t dx = en.x - su7state.pos.x;
     int32_t dy = en.y - su7state.pos.y;
     dx = dx < 0 ? -dx : dx;
     dy = dy < 0 ? -dy : dy;
-    if (dx + dy == 0)
+    if (dx + dy == 0) {
         return;
-    else if (dx + dy == 1) {
+    } else if (dx + dy == 1) {
         goDirection(GetDirection(su7state.pos, en));
         return;
     }
     else {
-        static Waypoint explore_queue[SCENE_COORDS_MAX_X * SCENE_COORDS_MAX_Y * 4];
-        static uint32_t eq_head, eq_tail;
-        static uint8_t vis[SCENE_COORDS_MAX_X][SCENE_COORDS_MAX_Y];
-        static direction_t nxt[SCENE_COORDS_MAX_X][SCENE_COORDS_MAX_Y];
-
-        for (int32_t y = 0; y < SCENE_COORDS_MAX_Y; ++y)
-            for (int32_t x = 0; x < SCENE_COORDS_MAX_X; ++x)
-                vis[y][x] = 0;
+        for (int32_t x = 0; x < SCENE_COORDS_MAX_X; ++x)
+            for (int32_t y = 0; y < SCENE_COORDS_MAX_Y; ++y)
+                vis[x][y] = 0;
         Waypoint nx, ne;
         eq_head = eq_tail = 0;
         explore_queue[eq_tail] = en;
         ++eq_tail;
+        vis[en.x][en.y] = 1;
         while (eq_head != eq_tail) {
             nx = explore_queue[eq_head];
             if (nx.x == su7state.pos.x && nx.y == su7state.pos.y) {
-                goDirection(nxt[nx.x][nx.y]);
+                while(su7state.pos.x != en.x || su7state.pos.y != en.y) {
+                    goDirection(nxt[su7state.pos.x][su7state.pos.y]);
+                }
                 return;
             }
             eq_head = (eq_head + 1) % es_len;
             for (uint32_t i = 0; i < ld; ++i) {
-                ne = (Waypoint){nx.x + dirx[i], nx.y + diry[i]};
+                ne = (Waypoint){nx.x - dirx[i], nx.y - diry[i]};
                 if (check_valid_neq(ne, SO_Obstacle) && check_valid_neq(ne, SO_Unknown) && vis[ne.x][ne.y] == 0) {
-                    nxt[ne.x][ne.y] = i ^ 2;
+                    nxt[ne.x][ne.y] = i;
                     explore_queue[eq_tail] = ne;
                     eq_tail = (eq_tail + 1) % es_len;
                     vis[ne.x][ne.y] = 1;
@@ -203,28 +206,10 @@ uint8_t explore_dir(const direction_t dir)
 void autoavoid_update()
 {
     Waypoint nx;
-    HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, (su7state.pos.x&2) >> 1);
-    HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, su7state.pos.x&1);
-    HAL_Delay(1000);
-    HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, (su7state.pos.y&2) >> 1);
-    HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, su7state.pos.y&1);
-    HAL_Delay(1000);
-    HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, (su7state.heading&2) >> 1);
-    HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, su7state.heading&1);
-    HAL_Delay(1000);
     for (uint32_t i = 0; i < ld; ++i) {
         nx = (Waypoint){su7state.pos.x + dirx[i], su7state.pos.y + diry[i]};
         if (check_valid_eq(nx, SO_Unknown)) {
-            HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, (i&2) >> 1);
-            HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, i&1);
-            HAL_Delay(1000);
             if (explore_dir(i)) {
-                
-                HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, GPIO_PIN_RESET);
-                HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_SET);
-                // HAL_Delay(1000);
                 Scene_set_object(&ShinxScene1, nx.x, nx.y, SO_Empty);
                 es_push(nx);
                 break;
@@ -236,8 +221,6 @@ void autoavoid_update()
             }
         }
     }
-    HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, GPIO_PIN_SET);
-    HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_RESET);
     if (es_head == 0) {
         for (int32_t i = 0; i < SCENE_COORDS_MAX_X && es_head == 0; ++i) {
             for (int32_t j = 0; j < SCENE_COORDS_MAX_Y && es_head == 0; ++j) {
@@ -258,9 +241,6 @@ void autoavoid_update()
         end_mode();
         return;
     }
-    
-    HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, GPIO_PIN_SET);
-    HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_SET);
     nx = es_get();
     safe_goto(nx);
     es_pop();

@@ -19,20 +19,18 @@
 
 #define TIME_SCALE_SPD_90 1.09
 // #define ROT_1d_TIME (TIME_SCALE_SPD_90 * 4.25)    // 1530/360
-// #define ROT_90d_TIME (TIME_SCALE_SPD_90 * 382.5)  // 1530/4
 // #define GO_1block_TIME (TIME_SCALE_SPD_90 * 1700) // 80cm: 1.7s
 // #define GO_12cm_TIME (TIME_SCALE_SPD_90 * 255)    // half length of su7
-#define ROT_1d_TIME 4.25    // 1530/360
-#define ROT_90d_TIME 382.5  // 1530/4
-#define GO_1block_TIME 1700 // 80cm: 1.7s
+#define ROT_1d_TIME 4.58    // 1530/360
+#define GO_1block_TIME 1500 // 80cm: 1.5s
 #define GO_12cm_TIME 255    // half length of su7
 
 #define SCENE_COORDS_MAX_Y 4
 #define SCENE_COORDS_MAX_X 4
 
 typedef struct {
-    int32_t y;
     int32_t x;
+    int32_t y;
 } Point2i;
 
 typedef Point2i Waypoint;
@@ -54,7 +52,7 @@ typedef enum {
 } SceneObject;
 
 typedef struct {
-    SceneObject sceneMat[SCENE_COORDS_MAX_Y][SCENE_COORDS_MAX_X]; // Scene object matrix
+    SceneObject sceneMat[SCENE_COORDS_MAX_X][SCENE_COORDS_MAX_Y]; // Scene object matrix
     WaypointVector waypoints;
 } Scene;
 
