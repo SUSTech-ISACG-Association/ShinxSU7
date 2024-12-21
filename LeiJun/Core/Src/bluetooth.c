@@ -83,7 +83,6 @@ void send_set_mode(uint8_t mode)
 
 float get_distance()
 {
-
     uint8_t opcode = 0x00;
     uint8_t receive_buffer;
     float distance = 0;
@@ -134,7 +133,11 @@ void send_waypoint()
     HAL_UART_Receive(huart, &receive_buffer, 1, 0xffff); // recv ACK1
     // TODO: handle error ACK1
     waypoint_list[waypoint_cnt] = 0xff;
-    HAL_UART_Transmit(huart, waypoint_list, waypoint_cnt + 1, 0xffff);
+    // HAL_UART_Transmit(huart, waypoint_list, waypoint_cnt + 1, 0xffff);
+    for (int i = 0; i <= waypoint_cnt; i++) {
+        HAL_UART_Transmit(huart, &waypoint_list[i], 1, 0xffff);
+		HAL_Delay(10);
+    }
     HAL_UART_Receive(huart, &receive_buffer, 1, 0xffff);
     handle_ack2(receive_buffer);
 #endif

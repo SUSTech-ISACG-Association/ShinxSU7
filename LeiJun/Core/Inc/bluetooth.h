@@ -40,4 +40,6 @@ void send_waypoint();
  */
 void send_toggle_run();
 
+void handle_ack2(uint8_t ack);
+
 #endif
