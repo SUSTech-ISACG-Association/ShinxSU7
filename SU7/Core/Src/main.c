@@ -164,7 +164,7 @@ int main(void)
           wayi = 0;
         } else {
           direction_t dir = GetDirection(ShinxScene1.waypoints.arr[wayi], ShinxScene1.waypoints.arr[wayi+1]);
-          goDirection(dir);
+          calibrateAndGoDir(dir);
           // su7state = (SU7State_t){ShinxScene1.waypoints.arr[wayi+1], dir};
         }
       } else if (su7mode == AUTO_AVOID_MODE) {

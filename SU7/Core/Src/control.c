@@ -48,7 +48,7 @@ uint32_t calibratedHBlkTime = CALIB_INIT_HBLK_TIME;
 // Spin until SU7 faces right toward the next square
 // i.e., the current orientation makes a 90 degree angle
 // relative to the borderline of the current square
-void autopilotCalibrate()
+void autopilotCalibratedStraightMove()
 {
     // We make the assumption that the first time we
     // come across a border, our orientation must be
@@ -182,15 +182,15 @@ void autopilotCalibrate()
 
     uint32_t enterTickElapsed = enterEndTick - enterStartTick;
     uint32_t exitTickElapsed = exitEndTick - exitStartTick;
-    append_my_message(0x82, (uint8_t *)&enterTickElapsed, sizeof(uint32_t));
-    append_my_message(0x82, (uint8_t *)&exitTickElapsed, sizeof(uint32_t));
+    // append_my_message(0x82, (uint8_t *)&enterTickElapsed, sizeof(uint32_t));
+    // append_my_message(0x82, (uint8_t *)&exitTickElapsed, sizeof(uint32_t));
     // ctEnEl = enterTickElapsed;
     // ctExEl = exitTickElapsed;
 }
 
 uint32_t calibratedRot90Time = ROT_1d_TIME;
 
-void rotDirection(const direction_t dir)
+void calibrateAndRotDir(const direction_t dir)
 {
     float ang = Direction2float(dir) - Direction2float(su7state.heading);
     if (ang > 180)
@@ -209,10 +209,10 @@ void rotDirection(const direction_t dir)
     su7state.heading = dir;
 }
 
-void goDirection(const direction_t dir)
+void calibrateAndGoDir(const direction_t dir)
 {
-    rotDirection(dir);
-    autopilotCalibrate();
+    calibrateAndRotDir(dir);
+    autopilotCalibratedStraightMove();
     su7state.pos.x += dirx[dir];
     su7state.pos.y += diry[dir];
 }
@@ -227,18 +227,18 @@ void runInitialCalibration()
     HAL_Delay(150);
     LED0_Write(0);
     LED1_Write(0);
-    goDirection(X_POSITIVE);
-    goDirection(X_POSITIVE);
-    goDirection(Y_POSITIVE);
-    goDirection(X_NEGATIVE);
-    goDirection(X_NEGATIVE);
-    goDirection(Y_POSITIVE);
-    goDirection(X_POSITIVE);
-    goDirection(X_POSITIVE);
-    goDirection(Y_NEGATIVE);
-    goDirection(Y_NEGATIVE);
-    goDirection(X_NEGATIVE);
-    goDirection(X_NEGATIVE);
+    calibrateAndGoDir(X_POSITIVE);
+    calibrateAndGoDir(X_POSITIVE);
+    calibrateAndGoDir(Y_POSITIVE);
+    calibrateAndGoDir(X_NEGATIVE);
+    calibrateAndGoDir(X_NEGATIVE);
+    calibrateAndGoDir(Y_POSITIVE);
+    calibrateAndGoDir(X_POSITIVE);
+    calibrateAndGoDir(X_POSITIVE);
+    calibrateAndGoDir(Y_NEGATIVE);
+    calibrateAndGoDir(Y_NEGATIVE);
+    calibrateAndGoDir(X_NEGATIVE);
+    calibrateAndGoDir(X_NEGATIVE);
     LED0_Write(1);
     LED1_Write(1);
     HAL_Delay(150);
@@ -336,7 +336,7 @@ void safe_goto(const Waypoint en)
         return;
     }
     else if (dx + dy == 1) {
-        goDirection(GetDirection(su7state.pos, en));
+        calibrateAndGoDir(GetDirection(su7state.pos, en));
         return;
     }
     else {
@@ -352,7 +352,7 @@ void safe_goto(const Waypoint en)
             nx = explore_queue[eq_head];
             if (nx.x == su7state.pos.x && nx.y == su7state.pos.y) {
                 while (su7state.pos.x != en.x || su7state.pos.y != en.y) {
-                    goDirection(nxt[su7state.pos.x][su7state.pos.y]);
+                    calibrateAndGoDir(nxt[su7state.pos.x][su7state.pos.y]);
                 }
                 return;
             }
@@ -387,7 +387,7 @@ void safe_goto(const Waypoint en)
 
 uint8_t explore_dir(const direction_t dir)
 {
-    rotDirection(dir);
+    calibrateAndRotDir(dir);
     uint32_t tickStart = HAL_GetTick();
     uint32_t wait = calibratedHBlkTime * 2;
 
