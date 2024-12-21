@@ -174,7 +174,7 @@ int main(void)
                     }
                     else // waypoint
                     {
-                        waypoint_cnt = 0;
+                        waypoint_cnt = 1;
                     }
                 }
                 else {
@@ -216,7 +216,7 @@ int main(void)
                         for (uint8_t i = 0; i < 16; i++) {
                             if (button_pressed & (1 << i)) {
                                 if (waypoint_cnt == 0) {
-                                    waypoint_list[waypoint_cnt++] = i;
+                                    // set start first.
                                 }
                                 else {
                                     uint8_t last = waypoint_list[waypoint_cnt - 1];
