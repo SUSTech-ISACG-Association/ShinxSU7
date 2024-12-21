@@ -6,7 +6,7 @@
 
 extern UART_HandleTypeDef *huart;
 extern uint16_t button_pressed;
-
+extern uint8_t updated;
 
 /**
  * @brief send instruction setting to the desired mode

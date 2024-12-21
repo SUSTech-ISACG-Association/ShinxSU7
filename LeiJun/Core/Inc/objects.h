@@ -34,4 +34,6 @@ uint16_t which_button_pressed_manual(_m_tp_dev *p);
  */
 uint16_t which_button_pressed_map(_m_tp_dev *p);
 
+void reset_states();
+
 #endif

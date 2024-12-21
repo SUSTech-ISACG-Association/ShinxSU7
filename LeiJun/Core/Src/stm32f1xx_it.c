@@ -285,6 +285,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
             // WK_UP for mode swtich
             LeiJun_mode = (LeiJun_mode + 1) % 3;
             LCD_Clear(BACK_COLOR);
+			reset_states();
             switch (LeiJun_mode) {
             case 0:
                 send_set_mode(0x01);

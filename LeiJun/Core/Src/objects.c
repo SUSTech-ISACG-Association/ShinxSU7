@@ -20,7 +20,7 @@ uint8_t waypoint_cnt = 0;
 
 uint8_t LeiJun_mode;
 
-uint8_t whereami = 0, facedirection = 0, is_race = 0, is_running = 0;
+uint8_t whereami = 0, facedirection = 0, is_race = 0, is_running = 0, is_setting_start = 1;
 
 uint16_t which_button_pressed_manual(_m_tp_dev *p)
 {
@@ -46,4 +46,17 @@ uint16_t which_button_pressed_map(_m_tp_dev *p)
         }
     }
     return result;
+}
+
+void reset_states()
+{
+    start = 0xff;
+    end = 0xff;
+    obstacles = 0x0000;
+    waypoint_state = 0;
+    waypoint_cnt = 0;
+    whereami = 0;
+    facedirection = 0;
+    is_running = is_race = 0;
+    is_setting_start = 1;
 }

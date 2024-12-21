@@ -132,12 +132,12 @@ void draw_waypoint_objects()
     for (int i = 0; i < 16; i++) {
         if (start == i) {
             POINT_COLOR = WHITE;
-            draw_button_text(button_map[i].sx, button_map[i].sy, button_map[i].ex, button_map[i].ey, 24, "S",
+            draw_button_text(button_map[i].sx, button_map[i].sy, button_map[i].ex, button_map[i].ey, 16, "S",
                              (button_map + i));
         }
         else if (end == i) {
             POINT_COLOR = WHITE;
-            draw_button_text(button_map[i].sx, button_map[i].sy, button_map[i].ex, button_map[i].ey, 24, "E",
+            draw_button_text(button_map[i].sx, button_map[i].sy, button_map[i].ex, button_map[i].ey, 16, "E",
                              (button_map + i));
         }
         else if (obstacles & (1 << i)) {
@@ -199,10 +199,30 @@ void draw_auto()
     LCD_ShowString(84, 10, 72, 16, 16, "Autopilot");
     for (int i = 0; i < 4; i++) {
         for (int j = 0; j < 4; j++) {
-            if (i * 4 + j == whereami) {
-                draw_button_text(20 + j * 50, 40 + i * 50, 70 + j * 50, 90 + i * 50, 24, "Me",
+			// TODO: replace text with image
+            if (i * 4 + j == whereami && whereami == start) {
+                draw_button_text(20 + j * 50, 40 + i * 50, 70 + j * 50, 90 + i * 50, 16, "(S)",
                                  (button_map + i * 4 + j));
             }
+			else if(i * 4 + j == whereami && whereami == end){
+				draw_button_text(20 + j * 50, 40 + i * 50, 70 + j * 50, 90 + i * 50, 16, "(E)",
+								 (button_map + i * 4 + j));
+			}
+			else if (i * 4 + j == whereami) {
+				draw_button_text(20 + j * 50, 40 + i * 50, 70 + j * 50, 90 + i * 50, 16, "()",
+								 (button_map + i * 4 + j));
+			}
+			else if (i * 4 + j == start) {
+				draw_button_text(20 + j * 50, 40 + i * 50, 70 + j * 50, 90 + i * 50, 16, "S",
+								 (button_map + i * 4 + j));
+			}
+			else if (i * 4 + j == end) {
+				draw_button_text(20 + j * 50, 40 + i * 50, 70 + j * 50, 90 + i * 50, 16, "E",
+								 (button_map + i * 4 + j));
+			}
+			else if (obstacles & (1 << (i * 4 + j))) {
+				draw_button_color(20 + j * 50, 40 + i * 50, 70 + j * 50, 90 + i * 50, RED, (button_map + i * 4 + j));
+			}
             else {
                 draw_button_color(20 + j * 50, 40 + i * 50, 70 + j * 50, 90 + i * 50, BLACK, (button_map + i * 4 + j));
             }
@@ -221,7 +241,7 @@ void draw_auto()
     LCD_DrawLine(170, 260, 170, 310);
     LCD_DrawLine(220, 260, 220, 310);
     char mode_text[20];
-	LCD_Fill_Window(120, 244, 220, 256, BACK_COLOR);
+    LCD_Fill_Window(120, 244, 220, 256, BACK_COLOR);
     sprintf(mode_text, is_race ? "Race" : "Detect");
     uint8_t mode_text_x = 120 + ((100 - strlen(mode_text) * 6) >> 1);
     POINT_COLOR = is_running ? GREEN : WHITE;

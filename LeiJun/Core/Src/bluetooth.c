@@ -4,7 +4,7 @@
 
 #define MAXSPEED (100)
 
-// #define WITH_BLUETOOTH
+#define WITH_BLUETOOTH
 
 extern UART_HandleTypeDef *huart;
 extern uint8_t LeiJun_mode;
@@ -52,7 +52,9 @@ void handle_ack2(uint8_t ack2)
             HAL_UART_Receive(huart, &distance, 4, 0xffff);
             break;
         case 0x81:
-            // get position
+            HAL_UART_Receive(huart, &recv_buffer, 1, 0xffff);
+            obstacles |= (1 << recv_buffer);
+            updated = 1;
             break;
         default:
             char warning[50];
@@ -92,7 +94,7 @@ float get_distance()
     opcode = 0x80;
     HAL_UART_Transmit(huart, &opcode, 1, 0xffff);        // send GET distance
     HAL_UART_Receive(huart, &receive_buffer, 1, 0xffff); // recv ACK1
-                                                         // TODO: handle error ACK1
+    // TODO: handle error ACK1
     HAL_UART_Receive(huart, &distance, 4, 0xffff);       // recv distance data
     HAL_UART_Receive(huart, &receive_buffer, 1, 0xffff); // recv ACK2
     handle_ack2(receive_buffer);
@@ -109,6 +111,7 @@ void send_manual_inst()
         if (button_pressed & (1 << i)) {
             HAL_UART_Transmit(huart, &opcode, 1, 0xffff);
             HAL_UART_Receive(huart, &receive_buffer, 1, 0xffff);
+            // TODO: handle error ACK1
             HAL_UART_Transmit(huart, control_map[i], 4, 0xffff);
             break;
         }
@@ -129,7 +132,7 @@ void send_waypoint()
     opcode = 0x20;
     HAL_UART_Transmit(huart, &opcode, 1, 0xffff);        // send waypoint opcode
     HAL_UART_Receive(huart, &receive_buffer, 1, 0xffff); // recv ACK1
-    // TODO: handle error code of ACK1
+    // TODO: handle error ACK1
     waypoint_list[waypoint_cnt] = 0xff;
     HAL_UART_Transmit(huart, waypoint_list, waypoint_cnt + 1, 0xffff);
     HAL_UART_Receive(huart, &receive_buffer, 1, 0xffff);
@@ -143,6 +146,21 @@ void send_toggle_run()
     uint8_t opcode = is_running ? 0x05 : 0x06;
     uint8_t receive_buffer;
     HAL_UART_Transmit(huart, &opcode, 1, 0xffff);
+    HAL_UART_Receive(huart, &receive_buffer, 1, 0xffff);
+    handle_ack2(receive_buffer);
+#endif
+}
+
+void send_start_end()
+{
+#ifdef WITH_BLUETOOTH
+    uint8_t opcode = 0x30;
+    uint8_t receive_buffer;
+    HAL_UART_Transmit(huart, &opcode, 1, 0xffff);
+    HAL_UART_Receive(huart, &receive_buffer, 1, 0xffff);
+    // TODO: handle error ACK1
+    uint8_t payload[2] = {start, end};
+    HAL_UART_Transmit(huart, payload, 2, 0xffff);
     HAL_UART_Receive(huart, &receive_buffer, 1, 0xffff);
     handle_ack2(receive_buffer);
 #endif

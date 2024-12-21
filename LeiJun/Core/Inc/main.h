@@ -52,7 +52,7 @@ extern uint8_t waypoint_cnt;
 extern uint8_t waypoint_list[100];
 extern uint8_t waypoint_state;
 
-extern uint8_t whereami, face_direction, is_race, is_running;
+extern uint8_t whereami, face_direction, is_race, is_running, is_setting_start;
 /* USER CODE END EC */
 
 /* Exported macro ------------------------------------------------------------*/
