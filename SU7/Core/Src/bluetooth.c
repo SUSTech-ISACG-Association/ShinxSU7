@@ -98,22 +98,6 @@ void bluetooth_RxCallback()
             start_bluetooth_IT();
         }
         break;
-    case 0x11:
-        if (flag == 0) {
-            bluetooth_sendACK1(0x00);
-            HAL_UART_Receive_IT(huart, (uint8_t *)&proto_buffer, 4);
-            flag = 1;
-        }
-        else {
-            if (su7mode == CONTROL_MODE) {
-                int8_t spd = *((int8_t *)(&proto_buffer));
-                SetMotorSpeedLF(spd);
-            }
-            flag = 0;
-            bluetooth_sendACK2(0x00);
-            start_bluetooth_IT();
-        }
-        break;
     case 0x20:
         if (flag == 0) {
             bluetooth_sendACK1(0x00);

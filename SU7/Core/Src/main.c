@@ -133,42 +133,6 @@ int main(void)
   HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_RESET);
 
   Scene_init(&ShinxScene1);
-
-  // LED0_Write(0);
-  // LED1_Write(0);
-  // HAL_Delay(500);
-  // LED0_Write(1);
-  // LED1_Write(0);
-  goDirection(X_POSITIVE);
-  // LED0_Write(0);
-  // LED1_Write(1);
-  // HAL_Delay(500);
-  // LED0_Write(0);
-  // LED1_Write(0);
-  // HAL_Delay(500);
-  // LED0_Write(1);
-  // LED1_Write(0);
-  // goDirection(X_POSITIVE);
-  // LED0_Write(0);
-  // LED1_Write(1);
-  // HAL_Delay(500);
-  // LED0_Write(0);
-  // LED1_Write(0);
-  // HAL_Delay(500);
-  // LED0_Write(1);
-  // LED1_Write(0);
-  // goDirection(X_NEGATIVE);
-  // HAL_Delay(1000);
-  // goDirection(X_NEGATIVE);
-  // HAL_Delay(1000);
-  // goDirection(Y_POSITIVE);
-  // HAL_Delay(1000);
-  // goDirection(Y_POSITIVE);
-  // HAL_Delay(1000);
-  // goDirection(Y_NEGATIVE);
-  // HAL_Delay(1000);
-  // goDirection(Y_NEGATIVE);
-  // HAL_Delay(1000);
   
   /* USER CODE END 2 */
 
@@ -179,36 +143,36 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    // uint8_t key;
-    // key=Remote_Scan();
-    // switch(key)
-    // {
-    //   case 98:MOTOR_FORWARD(100);break;
-    //   case 2: MOTOR_STOP();end_mode();break;
-    //   case 194:MOTOR_TURNR(100);break;
-    //   case 34:MOTOR_TURNL(100);break;
-    //   case 224:MOTOR_SPINL(100);break;
-    //   case 168:MOTOR_BACK(100);break;
-    //   case 144:MOTOR_SPINR(100);break;
-    // }
+    uint8_t key;
+    key = Remote_Scan();
+    switch(key)
+    {
+      case 98:  MOTOR_FORWARD(100);      break;
+      case 2:   MOTOR_STOP();end_mode(); break;
+      case 194: MOTOR_TURNR(100);        break;
+      case 34:  MOTOR_TURNL(100);        break;
+      case 224: MOTOR_SPINL(100);        break;
+      case 168: MOTOR_BACK(100);         break;
+      case 144: MOTOR_SPINR(100);        break;
+    }
 
-    // if (SU7Running) {
-    //   if (su7mode == WAYPOINT_MODE) {
-    //     // TODO: pack to waypoint_update()
-    //     if (wayi == ShinxScene1.waypoints.length) {
-    //       end_mode();
-    //       wayi = 0;
-    //     } else {
-    //       direction_t dir = GetDirection(ShinxScene1.waypoints.arr[wayi], ShinxScene1.waypoints.arr[wayi+1]);
-    //       goDirection(dir);
-    //       su7state = (SU7State_t){ShinxScene1.waypoints.arr[wayi+1], dir};
-    //     }
-    //   } else if (su7mode == AUTO_AVOID_MODE) {
-    //     autoavoid_update();
-    //   } else if (su7mode == AUTO_RACE_MODE) {
-    //     autorace_update();
-    //   }
-    // }
+    if (SU7Running) {
+      if (su7mode == WAYPOINT_MODE) {
+        // TODO: pack to waypoint_update()
+        if (wayi == ShinxScene1.waypoints.length) {
+          end_mode();
+          wayi = 0;
+        } else {
+          direction_t dir = GetDirection(ShinxScene1.waypoints.arr[wayi], ShinxScene1.waypoints.arr[wayi+1]);
+          goDirection(dir);
+          // su7state = (SU7State_t){ShinxScene1.waypoints.arr[wayi+1], dir};
+        }
+      } else if (su7mode == AUTO_AVOID_MODE) {
+        autoavoid_update();
+      } else if (su7mode == AUTO_RACE_MODE) {
+        autorace_update();
+      }
+    }
   }
   /* USER CODE END 3 */
 }

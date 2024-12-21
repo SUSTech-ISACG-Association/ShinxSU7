@@ -319,7 +319,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
   case KEY3_Pin:
     HAL_Delay(50);
     if(HAL_GPIO_ReadPin(KEY3_GPIO_Port, KEY3_Pin) == GPIO_PIN_SET){
-      end_mode();
+      runInitialCalibration();
     }
     while(HAL_GPIO_ReadPin(KEY3_GPIO_Port, KEY3_Pin) == GPIO_PIN_SET){
     }

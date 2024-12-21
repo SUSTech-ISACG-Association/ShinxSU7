@@ -14,25 +14,6 @@ static uint32_t ld = 4;
 
 static const int16_t max_spd = 100;
 
-void rotDirection(const direction_t dir)
-{
-    float ang = Direction2float(dir) - Direction2float(su7state.heading);
-    if (ang > 180)
-        ang -= 360;
-    else if (ang < -180)
-        ang += 360;
-    if (ang < 0) {
-        MOTOR_SPINL(max_spd);
-        HAL_Delay(ROT_1d_TIME * (-ang));
-    }
-    else {
-        MOTOR_SPINR(max_spd);
-        HAL_Delay(ROT_1d_TIME * ang);
-    }
-    MOTOR_STOP();
-    su7state.heading = dir;
-}
-
 // State used while calibrating the orientation
 typedef enum {
     CalibState_Entering,
@@ -53,7 +34,13 @@ static inline uint8_t calibrateReadSearchState()
 }
 
 #define CALIB_TIME_DECAY_COEFF 0.75f
-static uint32_t calibHBlkTime = 0;
+#define CALIB_RETREAT_MINIMUM_TIME 100
+#define CALIB_SPIN_MIN_TIME 90
+#define CALIB_INIT_HBLK_TIME 850
+
+// Calibrated half-block time that will be used in
+// the latter
+uint32_t calibratedHBlkTime = CALIB_INIT_HBLK_TIME;
 
 // extern uint32_t ctEnEl;
 // extern uint32_t ctExEl;
@@ -80,7 +67,7 @@ void autopilotCalibrate()
     CalibState_t state = CalibState_Entering;
 
     while (state != CalibState_Complete) {
-        HAL_Delay(5);
+        // HAL_Delay(5);
         uint8_t searchState = calibrateReadSearchState();
 
         if (searchState != 0b000 && enterEndTick == UINT32_MAX) {
@@ -90,7 +77,8 @@ void autopilotCalibrate()
         switch (searchState) {
         case 0b000:
             // Continue
-            if (state != CalibState_PassingThrough && state != CalibState_Exiting)
+            if (state != CalibState_PassingThrough && state != CalibState_Exiting && state != CalibState_SpinL &&
+                state != CalibState_SpinR)
                 state = CalibState_Entering;
             else
                 state = CalibState_Exiting;
@@ -99,13 +87,13 @@ void autopilotCalibrate()
             // Passing the borderline and do nothing
             state = CalibState_PassingThrough;
             break;
-        case 0b011:
-        case 0b001:
+        case 0b100:
+        case 0b110:
             if (state == CalibState_Entering)
                 state = CalibState_SpinL;
             break;
-        case 0b100:
-        case 0b110:
+        case 0b001:
+        case 0b011:
             if (state == CalibState_Entering)
                 state = CalibState_SpinR;
             break;
@@ -122,54 +110,60 @@ void autopilotCalibrate()
         switch (state) {
         case CalibState_Entering:
             MOTOR_FORWARD(max_spd);
-            LED0_Write(0);
-            LED1_Write(0);
+            // LED0_Write(0);
+            // LED1_Write(0);
             break;
         case CalibState_PassingThrough:
             MOTOR_FORWARD(max_spd);
-            LED0_Write(1);
-            LED1_Write(0);
+            // LED0_Write(1);
+            // LED1_Write(0);
             break;
         case CalibState_Exiting:
             exitEndTick = HAL_GetTick();
-            if (calibHBlkTime != 0) {
-                if (exitEndTick - exitStartTick > calibHBlkTime) {
+            if (calibratedHBlkTime != 0) {
+                if (exitEndTick - exitStartTick > calibratedHBlkTime) {
                     state = CalibState_Complete;
                     MOTOR_STOP();
-                    LED0_Write(1);
-                    LED1_Write(1);
+                    // LED0_Write(1);
+                    // LED1_Write(1);
                 }
                 else {
                     MOTOR_FORWARD(max_spd);
-                    LED0_Write(0);
-                    LED1_Write(1);
+                    // LED0_Write(0);
+                    // LED1_Write(1);
                 }
             }
             else {
                 if (exitEndTick - exitStartTick > enterEndTick - enterStartTick) {
                     state = CalibState_Complete;
                     MOTOR_STOP();
-                    LED0_Write(1);
-                    LED1_Write(1);
+                    // LED0_Write(1);
+                    // LED1_Write(1);
                 }
                 else {
                     MOTOR_FORWARD(max_spd);
-                    LED0_Write(0);
-                    LED1_Write(1);
+                    // LED0_Write(0);
+                    // LED1_Write(1);
                 }
             }
             break;
         case CalibState_SpinL:
-            MOTOR_SPINL(max_spd - 20);
-            // MOTOR_SET_SPD(max_spd - 20, -(max_spd - 30));
+            // MOTOR_BACK(max_spd);
+            // HAL_Delay(CALIB_RETREAT_MINIMUM_TIME);
+            // MOTOR_SPINL(max_spd - 20);
+            MOTOR_SET_SPD(-(max_spd - 30), (max_spd - 20));
             // LED0_Write(1);
             // LED1_Write(0);
+            HAL_Delay(CALIB_SPIN_MIN_TIME);
             break;
         case CalibState_SpinR:
-            MOTOR_SPINR(max_spd - 20);
-            // MOTOR_SET_SPD(-(max_spd - 20), (max_spd - 20));
+            // MOTOR_BACK(max_spd);
+            // HAL_Delay(CALIB_RETREAT_MINIMUM_TIME);
+            // MOTOR_SPINR(max_spd - 20);
+            MOTOR_SET_SPD((max_spd - 20), -(max_spd - 30));
             // LED0_Write(0);
             // LED1_Write(1);
+            HAL_Delay(CALIB_SPIN_MIN_TIME);
             break;
         case CalibState_Complete:
             // LED0_Write(0);
@@ -180,10 +174,11 @@ void autopilotCalibrate()
     }
     // Update current half-block-required time based on #ticks elapsed on entering
     uint32_t tickElapsed = enterEndTick - enterStartTick;
-    if (calibHBlkTime == 0)
-        calibHBlkTime = tickElapsed;
+    if (calibratedHBlkTime == 0)
+        calibratedHBlkTime = tickElapsed;
     else
-        calibHBlkTime = (uint32_t)(tickElapsed * (1 - CALIB_TIME_DECAY_COEFF) + calibHBlkTime * CALIB_TIME_DECAY_COEFF);
+        calibratedHBlkTime =
+            (uint32_t)(tickElapsed * (1 - CALIB_TIME_DECAY_COEFF) + calibratedHBlkTime * CALIB_TIME_DECAY_COEFF);
 
     uint32_t enterTickElapsed = enterEndTick - enterStartTick;
     uint32_t exitTickElapsed = exitEndTick - exitStartTick;
@@ -193,6 +188,27 @@ void autopilotCalibrate()
     // ctExEl = exitTickElapsed;
 }
 
+uint32_t calibratedRot90Time = ROT_1d_TIME;
+
+void rotDirection(const direction_t dir)
+{
+    float ang = Direction2float(dir) - Direction2float(su7state.heading);
+    if (ang > 180)
+        ang -= 360;
+    else if (ang < -180)
+        ang += 360;
+    if (ang < 0) {
+        MOTOR_SPINL(max_spd);
+        HAL_Delay(ROT_1d_TIME * (-ang));
+    }
+    else {
+        MOTOR_SPINR(max_spd);
+        HAL_Delay(ROT_1d_TIME * ang);
+    }
+    MOTOR_STOP();
+    su7state.heading = dir;
+}
+
 void goDirection(const direction_t dir)
 {
     rotDirection(dir);
@@ -200,6 +216,49 @@ void goDirection(const direction_t dir)
     su7state.pos.x += dirx[dir];
     su7state.pos.y += diry[dir];
 }
+
+void runInitialCalibration()
+{
+    LED0_Write(0);
+    LED1_Write(0);
+    HAL_Delay(150);
+    LED0_Write(1);
+    LED1_Write(1);
+    HAL_Delay(150);
+    LED0_Write(0);
+    LED1_Write(0);
+    goDirection(X_POSITIVE);
+    goDirection(X_POSITIVE);
+    goDirection(Y_POSITIVE);
+    goDirection(X_NEGATIVE);
+    goDirection(X_NEGATIVE);
+    goDirection(Y_POSITIVE);
+    goDirection(X_POSITIVE);
+    goDirection(X_POSITIVE);
+    goDirection(Y_NEGATIVE);
+    goDirection(Y_NEGATIVE);
+    goDirection(X_NEGATIVE);
+    goDirection(X_NEGATIVE);
+    LED0_Write(1);
+    LED1_Write(1);
+    HAL_Delay(150);
+    LED0_Write(0);
+    LED1_Write(0);
+    HAL_Delay(150);
+    LED0_Write(1);
+    LED1_Write(1);
+    HAL_Delay(150);
+    LED0_Write(0);
+    LED1_Write(0);
+    HAL_Delay(150);
+    LED0_Write(1);
+    LED1_Write(1);
+    HAL_Delay(150);
+    LED0_Write(0);
+    LED1_Write(0);
+}
+
+// ============= END OF BASIC UTILITIES ===============
 
 static Waypoint autoavoid_start, autoavoid_end;
 static const uint32_t es_len = SCENE_COORDS_MAX_X * SCENE_COORDS_MAX_Y * 4;
@@ -324,11 +383,13 @@ void safe_goto(const Waypoint en)
     return;
 }
 
+#define EXPLORE_SPIN_MIN_TIME 100
+
 uint8_t explore_dir(const direction_t dir)
 {
     rotDirection(dir);
-    uint32_t tickstart = HAL_GetTick();
-    uint32_t wait = GO_1block_TIME;
+    uint32_t tickStart = HAL_GetTick();
+    uint32_t wait = calibratedHBlkTime * 2;
 
     /* Add a freq to guarantee minimum wait */
     if (wait < HAL_MAX_DELAY) {
@@ -337,13 +398,39 @@ uint8_t explore_dir(const direction_t dir)
 
     uint8_t need_go_back = 0;
     MOTOR_FORWARD(max_spd);
-    while ((HAL_GetTick() - tickstart) < wait) {
+    while ((HAL_GetTick() - tickStart) < wait) {
+        // Calibration test
+        uint8_t searchState = calibrateReadSearchState();
+
+        switch (searchState) {
+        case 0b100:
+        case 0b110:
+            MOTOR_SET_SPD(-(max_spd - 30), (max_spd - 20));
+            HAL_Delay(EXPLORE_SPIN_MIN_TIME);
+            MOTOR_FORWARD(max_spd);
+            break;
+        case 0b001:
+        case 0b011:
+            MOTOR_SET_SPD((max_spd - 20), -(max_spd - 30));
+            HAL_Delay(EXPLORE_SPIN_MIN_TIME);
+            MOTOR_FORWARD(max_spd);
+            break;
+        case 0b000:
+        case 0b010:
+        case 0b101:
+        case 0b111:
+            // Skip
+            break;
+        }
+
+        // Infrared obstruction test
         if (HAL_GPIO_ReadPin(AVOID_LEFT_GPIO_Port, AVOID_LEFT_Pin) == GPIO_PIN_RESET ||
             HAL_GPIO_ReadPin(AVOID_RIGHT_GPIO_Port, AVOID_RIGHT_Pin) == GPIO_PIN_RESET) {
             need_go_back = 1;
             break;
         }
-        if (wait - (HAL_GetTick() - tickstart) > 250) {
+        // Ultrasonic obstruction test
+        if (wait - (HAL_GetTick() - tickStart) > 250) {
             float dis = FastSonicDetect(3, 40);
             if (dis < 40) {
                 need_go_back = 1;
@@ -354,7 +441,7 @@ uint8_t explore_dir(const direction_t dir)
     MOTOR_STOP();
 
     if (need_go_back) {
-        uint32_t tick = (HAL_GetTick() - tickstart);
+        uint32_t tick = (HAL_GetTick() - tickStart);
         MOTOR_BACK(max_spd);
         HAL_Delay(tick);
         MOTOR_STOP();
@@ -417,10 +504,7 @@ void autorace_update()
 {
 RE_UPDATE:
     HAL_Delay(5);
-    uint8_t now_stateL = HAL_GPIO_ReadPin(SEARCH_L_GPIO_Port, SEARCH_L_Pin) == GPIO_PIN_SET;
-    uint8_t now_stateM = HAL_GPIO_ReadPin(SEARCH_M_GPIO_Port, SEARCH_M_Pin) == GPIO_PIN_SET;
-    uint8_t now_stateR = HAL_GPIO_ReadPin(SEARCH_R_GPIO_Port, SEARCH_R_Pin) == GPIO_PIN_SET;
-    uint8_t now_state = (now_stateL << 2) | (now_stateM << 1) | now_stateR;
+    uint8_t now_state = calibrateReadSearchState();
     switch (now_state) {
     case 0b000:
         if (race_state == TURNL_WAITING || race_state == TURNL) {

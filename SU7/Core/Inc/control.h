@@ -5,6 +5,7 @@
 
 extern SU7State_t su7state;
 
+void runInitialCalibration();
 void rotDirection(const direction_t dir);
 void goDirection(const direction_t dir);
 void set_autovoid_position(const Waypoint st, const Waypoint en);
