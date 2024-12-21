@@ -107,7 +107,7 @@ void bluetooth_RxCallback()
             HAL_UART_Receive(huart, &cc, 1, 0xffff);
         }
         bluetooth_sendACK2(0x00);
-        su7state = (SU7State_t){ShinxScene1.waypoints.arr[0], Y_NEGATIVE};
+        // su7state = (SU7State_t){ShinxScene1.waypoints.arr[0], Y_NEGATIVE};
         start_bluetooth_IT();
         flag = 0;
         break;

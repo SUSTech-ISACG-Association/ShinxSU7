@@ -159,13 +159,13 @@ int main(void)
     if (SU7Running) {
       if (su7mode == WAYPOINT_MODE) {
         // TODO: pack to waypoint_update()
-        if (wayi == ShinxScene1.waypoints.length) {
+        if (wayi == ShinxScene1.waypoints.length - 1) {
           end_mode();
           wayi = 0;
         } else {
           direction_t dir = GetDirection(ShinxScene1.waypoints.arr[wayi], ShinxScene1.waypoints.arr[wayi+1]);
           calibrateAndGoDir(dir);
-          // su7state = (SU7State_t){ShinxScene1.waypoints.arr[wayi+1], dir};
+          ++wayi;
         }
       } else if (su7mode == AUTO_AVOID_MODE) {
         autoavoid_update();
