@@ -1,11 +1,11 @@
 #include "control.h"
 #include "led.h"
 #include "limits.h"
+#include "math.h"
 #include "message_buffer.h"
 #include "motor.h"
 #include "scene.h"
 #include "sonic.h"
-#include "math.h"
 
 SU7State_t su7state = {{0, 0}, 0};
 static int32_t dirx[4] = {0, 1, 0, -1};
@@ -55,6 +55,9 @@ static inline uint8_t calibrateReadSearchState()
 #define CALIB_TIME_DECAY_COEFF 0.75f
 static uint32_t calibHBlkTime = 0;
 
+// extern uint32_t ctEnEl;
+// extern uint32_t ctExEl;
+
 // Spin until SU7 faces right toward the next square
 // i.e., the current orientation makes a 90 degree angle
 // relative to the borderline of the current square
@@ -80,8 +83,7 @@ void autopilotCalibrate()
         HAL_Delay(5);
         uint8_t searchState = calibrateReadSearchState();
 
-        if (searchState != 0b000 && enterEndTick == UINT32_MAX)
-        {
+        if (searchState != 0b000 && enterEndTick == UINT32_MAX) {
             enterEndTick = HAL_GetTick();
         }
 
@@ -113,8 +115,7 @@ void autopilotCalibrate()
             break;
         }
 
-        if (state == CalibState_Exiting && exitStartTick == 0)
-        {
+        if (state == CalibState_Exiting && exitStartTick == 0) {
             exitStartTick = HAL_GetTick();
         }
 
@@ -130,18 +131,32 @@ void autopilotCalibrate()
             LED1_Write(0);
             break;
         case CalibState_Exiting:
-            if ((exitEndTick = HAL_GetTick()) - exitStartTick > enterEndTick - enterStartTick)
-            {
-                state = CalibState_Complete;
-                MOTOR_STOP();
-                LED0_Write(1);
-                LED1_Write(1);
+            exitEndTick = HAL_GetTick();
+            if (calibHBlkTime != 0) {
+                if (exitEndTick - exitStartTick > calibHBlkTime) {
+                    state = CalibState_Complete;
+                    MOTOR_STOP();
+                    LED0_Write(1);
+                    LED1_Write(1);
+                }
+                else {
+                    MOTOR_FORWARD(max_spd);
+                    LED0_Write(0);
+                    LED1_Write(1);
+                }
             }
-            else
-            {
-                MOTOR_FORWARD(max_spd);
-                LED0_Write(0);
-                LED1_Write(1);
+            else {
+                if (exitEndTick - exitStartTick > enterEndTick - enterStartTick) {
+                    state = CalibState_Complete;
+                    MOTOR_STOP();
+                    LED0_Write(1);
+                    LED1_Write(1);
+                }
+                else {
+                    MOTOR_FORWARD(max_spd);
+                    LED0_Write(0);
+                    LED1_Write(1);
+                }
             }
             break;
         case CalibState_SpinL:
@@ -163,8 +178,8 @@ void autopilotCalibrate()
             break;
         }
     }
-    // Update current half-block-required time based on #ticks elapsed
-    uint32_t tickElapsed = exitEndTick - exitStartTick;
+    // Update current half-block-required time based on #ticks elapsed on entering
+    uint32_t tickElapsed = enterEndTick - enterStartTick;
     if (calibHBlkTime == 0)
         calibHBlkTime = tickElapsed;
     else
@@ -174,6 +189,8 @@ void autopilotCalibrate()
     uint32_t exitTickElapsed = exitEndTick - exitStartTick;
     append_my_message(0x82, (uint8_t *)&enterTickElapsed, sizeof(uint32_t));
     append_my_message(0x82, (uint8_t *)&exitTickElapsed, sizeof(uint32_t));
+    // ctEnEl = enterTickElapsed;
+    // ctExEl = exitTickElapsed;
 }
 
 void goDirection(const direction_t dir)
@@ -249,8 +266,8 @@ void safe_goto(const Waypoint en)
 {
     static Waypoint explore_queue[SCENE_COORDS_MAX_X * SCENE_COORDS_MAX_Y * 4];
     static uint32_t eq_head, eq_tail;
-    static uint8_t vis[SCENE_COORDS_MAX_X+5][SCENE_COORDS_MAX_Y+5];
-    static direction_t nxt[SCENE_COORDS_MAX_X+5][SCENE_COORDS_MAX_Y+5];
+    static uint8_t vis[SCENE_COORDS_MAX_X + 5][SCENE_COORDS_MAX_Y + 5];
+    static direction_t nxt[SCENE_COORDS_MAX_X + 5][SCENE_COORDS_MAX_Y + 5];
 
     int32_t dx = en.x - su7state.pos.x;
     int32_t dy = en.y - su7state.pos.y;
@@ -258,7 +275,8 @@ void safe_goto(const Waypoint en)
     dy = dy < 0 ? -dy : dy;
     if (dx + dy == 0) {
         return;
-    } else if (dx + dy == 1) {
+    }
+    else if (dx + dy == 1) {
         goDirection(GetDirection(su7state.pos, en));
         return;
     }
@@ -274,7 +292,7 @@ void safe_goto(const Waypoint en)
         while (eq_head != eq_tail) {
             nx = explore_queue[eq_head];
             if (nx.x == su7state.pos.x && nx.y == su7state.pos.y) {
-                while(su7state.pos.x != en.x || su7state.pos.y != en.y) {
+                while (su7state.pos.x != en.x || su7state.pos.y != en.y) {
                     goDirection(nxt[su7state.pos.x][su7state.pos.y]);
                 }
                 return;

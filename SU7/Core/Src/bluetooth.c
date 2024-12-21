@@ -33,6 +33,9 @@ void bluetooth_sendACK2(uint8_t ack_code)
     }
 }
 
+// uint32_t ctEnEl;
+// uint32_t ctExEl;
+
 void bluetooth_RxCallback()
 {
     my_message_t *p;
@@ -169,10 +172,12 @@ void bluetooth_RxCallback()
         bluetooth_sendACK1(0x00);
         HAL_Delay(1);
         HAL_UART_Transmit(huart, p->data, p->length, 0xffff);
+        // HAL_UART_Transmit(huart, &ctEnEl, sizeof(uint32_t), 0xffff);
         remove_last_find_message();
         HAL_Delay(1);
         p = find_message(0x82);
         HAL_UART_Transmit(huart, p->data, p->length, 0xffff);
+        // HAL_UART_Transmit(huart, &ctExEl, sizeof(uint32_t), 0xffff);
         remove_last_find_message();
 
         bluetooth_sendACK2(0x00);
