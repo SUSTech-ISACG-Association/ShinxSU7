@@ -81,8 +81,8 @@ void Scene_add_waypoint(Scene *scene, Waypoint p);
 
 Waypoint Scene_pop_waypoint(Scene *scene);
 
-void Scene_set_object(Scene *scene, int32_t y, int32_t x, SceneObject obj);
-SceneObject Scene_get_object(Scene *scene, int32_t y, int32_t x);
+void Scene_set_object(Scene *scene, int32_t x, int32_t y, SceneObject obj);
+SceneObject Scene_get_object(Scene *scene, int32_t x, int32_t y);
 
 typedef enum {
     Y_NEGATIVE = 0,
