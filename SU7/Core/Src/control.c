@@ -24,13 +24,23 @@ typedef enum {
     CalibState_Complete,
 } CalibState_t;
 
-static inline uint8_t calibrateReadSearchState()
+static inline uint8_t __calibReadSearchStateOnce()
 {
     uint8_t now_stateL = HAL_GPIO_ReadPin(SEARCH_L_GPIO_Port, SEARCH_L_Pin) == GPIO_PIN_SET;
     uint8_t now_stateM = HAL_GPIO_ReadPin(SEARCH_M_GPIO_Port, SEARCH_M_Pin) == GPIO_PIN_SET;
     uint8_t now_stateR = HAL_GPIO_ReadPin(SEARCH_R_GPIO_Port, SEARCH_R_Pin) == GPIO_PIN_SET;
     uint8_t now_state = (now_stateL << 2) | (now_stateM << 1) | now_stateR;
     return now_state;
+}
+
+static inline uint8_t calibrateReadSearchState()
+{
+    uint8_t s1 = __calibReadSearchStateOnce();
+    HAL_Delay(1);
+    uint8_t s2 = __calibReadSearchStateOnce();
+    HAL_Delay(1);
+    uint8_t s3 = __calibReadSearchStateOnce();
+    return s1 & s2 & s3;
 }
 
 #define CALIB_TIME_DECAY_COEFF 0.75f
@@ -252,10 +262,10 @@ void runInitialCalibration()
     calibrateAndGoDir(Y_POSITIVE);
     calibrateAndGoDir(X_POSITIVE);
     calibrateAndGoDir(X_POSITIVE);
-    calibrateAndGoDir(Y_NEGATIVE);
-    calibrateAndGoDir(Y_NEGATIVE);
     calibrateAndGoDir(X_NEGATIVE);
     calibrateAndGoDir(X_NEGATIVE);
+    calibrateAndGoDir(Y_NEGATIVE);
+    calibrateAndGoDir(Y_NEGATIVE);
     LED0_Write(1);
     LED1_Write(1);
     HAL_Delay(150);

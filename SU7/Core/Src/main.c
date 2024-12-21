@@ -129,8 +129,8 @@ int main(void)
 
   MOTOR_STOP();
 
-  HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_RESET);
+  LED0_Write(1);
+  LED1_Write(1);
 
   Scene_init(&ShinxScene1);
   
@@ -172,6 +172,10 @@ int main(void)
       } else if (su7mode == AUTO_RACE_MODE) {
         autorace_update();
       }
+    }
+    else
+    {
+      MOTOR_STOP();
     }
   }
   /* USER CODE END 3 */
