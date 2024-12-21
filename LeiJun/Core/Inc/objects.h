@@ -5,7 +5,7 @@
 #include <stdint.h>
 
 #define WITHIN_BUTTON(x, y, button_instance)                                                                           \
-    ((((button_instance.sx) <= (x)) && ((x) <= (button_instance.ex))) ||                                               \
+    ((((button_instance.sx) <= (x)) && ((x) <= (button_instance.ex))) &&                                               \
      (((button_instance.sy) <= (y)) && ((y) <= (button_instance.ey))))
 
 typedef struct button_area_t {

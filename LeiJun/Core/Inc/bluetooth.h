@@ -9,5 +9,6 @@ extern uint16_t button_pressed;
 
 float get_distance();
 uint8_t send_manual_inst();
+void send_waypoint();
 
 #endif

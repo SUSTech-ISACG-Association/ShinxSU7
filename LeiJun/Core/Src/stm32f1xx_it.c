@@ -257,7 +257,7 @@ void EXTI15_10_IRQHandler(void)
 /* USER CODE BEGIN 1 */
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-    HAL_Delay(100);
+    HAL_Delay(50);
     switch (GPIO_Pin) {
     case KEY0_Pin:
         if (HAL_GPIO_ReadPin(KEY0_GPIO_Port, KEY0_Pin) == GPIO_PIN_RESET) {
@@ -272,10 +272,10 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
         break;
     case KEY1_Pin:
         if (HAL_GPIO_ReadPin(KEY1_GPIO_Port, KEY1_Pin) == GPIO_PIN_RESET) {
-            // KEY1 for set obeject switching
+            // KEY1 for set object switching
             if (LeiJun_mode == 1) {
                 waypoint_state = (waypoint_state + 1) % 4;
-                draw_waypoint();
+                draw_waypoint(-1);
             }
             // 0: set_start, 1: set_end, 2: set_obstacles, 3: set_waypoints
         }
@@ -284,6 +284,20 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
         if (HAL_GPIO_ReadPin(WK_UP_GPIO_Port, WK_UP_Pin) == GPIO_PIN_SET) {
             // WK_UP for mode swtich
             LeiJun_mode = (LeiJun_mode + 1) % 3;
+            LCD_Clear(BACK_COLOR);
+            switch (LeiJun_mode) {
+            case 0:
+                draw_manual(-1);
+                break;
+            case 1:
+                draw_waypoint(-1);
+                break;
+            case 2:
+                draw_auto(-1);
+                break;
+            default:
+                break;
+            }
             // 0: Manual, 1: Waypoint, 2: Auto
         }
         break;

@@ -44,11 +44,13 @@ void draw_manual(float distance);
  * a button to switch between modes setting different elements:
  * 4 states: set_start, set_end, set_obstacles, set_waypoints
  */
-void draw_waypoint();
+void draw_waypoint(float distance);
 
 /**
  * @brief Draw UI for auto control modes: sweeping and racing
  *
  * 2 buttons: start_sweep, start_race
  */
-void draw_auto();
+void draw_auto(float distance);
+
+void drawUI(float distance);

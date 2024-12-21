@@ -8,8 +8,6 @@ extern uint8_t LeiJun_mode;
 // set by tim3 per 500 ms, sent within while(1) in main()
 uint8_t need_greeting_flag = 0;
 
-
-
 void handle_ack2(uint8_t ack2)
 {
     uint8_t recv_buffer;
@@ -24,8 +22,7 @@ void handle_ack2(uint8_t ack2)
 
         switch (ack2) {
         case 0x80:
-            HAL_UART_Receive(huart, &distance, 1, 0xffff);
-            draw_manual(distance);
+            HAL_UART_Receive(huart, &distance, 4, 0xffff);
             break;
         case 0x81:
             // get position
@@ -43,14 +40,14 @@ float get_distance()
     uint8_t opcode = 0x00;
     uint8_t receive_buffer;
     float distance = 0;
-    HAL_UART_Transmit(huart, &opcode, 1, 0xffff); // send Greeting
+    HAL_UART_Transmit(huart, &opcode, 1, 0xffff);        // send Greeting
     HAL_UART_Receive(huart, &receive_buffer, 1, 0xffff); // recv ACK2
-    handle_ack2(receive_buffer); // TODO: handle error ACK2
+    handle_ack2(receive_buffer);                         // TODO: handle error ACK2
     opcode = 0x80;
-    HAL_UART_Transmit(huart, &opcode, 1, 0xffff); // send GET distance
+    HAL_UART_Transmit(huart, &opcode, 1, 0xffff);        // send GET distance
     HAL_UART_Receive(huart, &receive_buffer, 1, 0xffff); // recv ACK1
                                                          // TODO: handle error ACK1
-    HAL_UART_Receive(huart, &distance, 4, 0xffff); // recv distance data
+    HAL_UART_Receive(huart, &distance, 4, 0xffff);       // recv distance data
     HAL_UART_Receive(huart, &receive_buffer, 1, 0xffff); // recv ACK2
     handle_ack2(receive_buffer);
     return distance;
@@ -147,4 +144,21 @@ uint8_t send_manual_inst()
     }
     HAL_UART_Receive(huart, &receive_buffer, 1, 0xffff);
     return 0x00;
+}
+
+void send_waypoint()
+{
+    uint8_t opcode = 0x00;
+    uint8_t receive_buffer;
+    HAL_UART_Transmit(huart, &opcode, 1, 0xffff);        // send greeting
+    HAL_UART_Receive(huart, &receive_buffer, 1, 0xffff); // recv ACK2
+    handle_ack2(receive_buffer);
+    opcode = 0x20;
+    HAL_UART_Transmit(huart, &opcode, 1, 0xffff);        // send waypoint opcode
+    HAL_UART_Receive(huart, &receive_buffer, 1, 0xffff); // recv ACK1
+    // TODO: handle error code of ACK1
+    waypoint_list[waypoint_cnt] = 0xff;
+    HAL_UART_Transmit(huart, waypoint_list, waypoint_cnt + 1, 0xffff);
+    HAL_UART_Receive(huart, &receive_buffer, 1, 0xffff);
+    handle_ack2(receive_buffer);
 }

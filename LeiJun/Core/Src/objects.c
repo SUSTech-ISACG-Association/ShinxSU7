@@ -7,7 +7,7 @@
  */
 button_area button_manual[9], button_map[16], button_auto[2], button_clear, button_go;
 
-uint8_t start, end = 0x00;
+uint8_t start=0xff, end = 0xff;
 
 /**
  * @brief bitmap of obstacles, 1 means obstacle, 0 means no obstacle
@@ -19,7 +19,8 @@ uint16_t obstacles = 0x0000;
  * @brief list of waypoints, id stored in order of start -> end
  *
  */
-uint8_t waypoint_list[16];
+uint8_t waypoint_list[100];
+int waypoint_cnt = 0;
 
 extern uint8_t LeiJun_mode;
 
