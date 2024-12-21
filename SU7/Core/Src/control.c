@@ -34,13 +34,17 @@ static inline uint8_t calibrateReadSearchState()
 }
 
 #define CALIB_TIME_DECAY_COEFF 0.75f
-#define CALIB_RETREAT_MINIMUM_TIME 100
+#define CALIB_RETREAT_MIN_TIME 100
 #define CALIB_SPIN_MIN_TIME 90
 #define CALIB_INIT_HBLK_TIME 850
+#define CALIB_ROT_OFFSET 5e-4
+#define CALIB_FLOAT_EPS 1e-4
 
-// Calibrated half-block time that will be used in
-// the latter
+// Calibrated half-block time
 uint32_t calibratedHBlkTime = CALIB_INIT_HBLK_TIME;
+// Calibrated 90-degree rotation time
+float calibrated90DegRotTime = ROT_1d_TIME;
+float calibrateLastSpinDeg = 0.0f;
 
 // extern uint32_t ctEnEl;
 // extern uint32_t ctExEl;
@@ -48,7 +52,7 @@ uint32_t calibratedHBlkTime = CALIB_INIT_HBLK_TIME;
 // Spin until SU7 faces right toward the next square
 // i.e., the current orientation makes a 90 degree angle
 // relative to the borderline of the current square
-void autopilotCalibrate()
+void autopilotCalibratedStraightMove()
 {
     // We make the assumption that the first time we
     // come across a border, our orientation must be
@@ -63,6 +67,10 @@ void autopilotCalibrate()
     uint32_t enterEndTick = UINT32_MAX;
     uint32_t exitStartTick = 0;
     uint32_t exitEndTick = UINT32_MAX;
+
+    // Set to 1 if spinned to left, 2 if to right
+    // Used to calibrate rotation
+    uint8_t firstSpin = 0;
 
     CalibState_t state = CalibState_Entering;
 
@@ -148,8 +156,10 @@ void autopilotCalibrate()
             }
             break;
         case CalibState_SpinL:
+            if (!firstSpin)
+                firstSpin = 1;
             // MOTOR_BACK(max_spd);
-            // HAL_Delay(CALIB_RETREAT_MINIMUM_TIME);
+            // HAL_Delay(CALIB_RETREAT_MIN_TIME);
             // MOTOR_SPINL(max_spd - 20);
             MOTOR_SET_SPD(-(max_spd - 30), (max_spd - 20));
             // LED0_Write(1);
@@ -157,8 +167,10 @@ void autopilotCalibrate()
             HAL_Delay(CALIB_SPIN_MIN_TIME);
             break;
         case CalibState_SpinR:
+            if (!firstSpin)
+                firstSpin = 2;
             // MOTOR_BACK(max_spd);
-            // HAL_Delay(CALIB_RETREAT_MINIMUM_TIME);
+            // HAL_Delay(CALIB_RETREAT_MIN_TIME);
             // MOTOR_SPINR(max_spd - 20);
             MOTOR_SET_SPD((max_spd - 20), -(max_spd - 30));
             // LED0_Write(0);
@@ -180,39 +192,44 @@ void autopilotCalibrate()
         calibratedHBlkTime =
             (uint32_t)(tickElapsed * (1 - CALIB_TIME_DECAY_COEFF) + calibratedHBlkTime * CALIB_TIME_DECAY_COEFF);
 
-    uint32_t enterTickElapsed = enterEndTick - enterStartTick;
-    uint32_t exitTickElapsed = exitEndTick - exitStartTick;
-    append_my_message(0x82, (uint8_t *)&enterTickElapsed, sizeof(uint32_t));
-    append_my_message(0x82, (uint8_t *)&exitTickElapsed, sizeof(uint32_t));
+    // uint32_t enterTickElapsed = enterEndTick - enterStartTick;
+    // uint32_t exitTickElapsed = exitEndTick - exitStartTick;
+    // append_my_message(0x82, (uint8_t *)&enterTickElapsed, sizeof(uint32_t));
+    // append_my_message(0x82, (uint8_t *)&exitTickElapsed, sizeof(uint32_t));
     // ctEnEl = enterTickElapsed;
     // ctExEl = exitTickElapsed;
+    if (fabsf(calibrateLastSpinDeg) < CALIB_FLOAT_EPS && firstSpin != 0) {
+        // Calibrate rotation
+        float sgn = firstSpin == 1 ? -1.0f : 1.0f;
+        float newC90DegRotTime = calibrated90DegRotTime + sgn * (calibrateLastSpinDeg / 90.0f) * CALIB_ROT_OFFSET;
+        calibrated90DegRotTime = newC90DegRotTime; 
+    }
 }
 
-uint32_t calibratedRot90Time = ROT_1d_TIME;
-
-void rotDirection(const direction_t dir)
+void calibrateAndRotDir(const direction_t dir)
 {
-    float ang = Direction2float(dir) - Direction2float(su7state.heading);
-    if (ang > 180)
-        ang -= 360;
-    else if (ang < -180)
-        ang += 360;
-    if (ang < 0) {
+    float deg = Direction2float(dir) - Direction2float(su7state.heading);
+    if (deg > 180)
+        deg -= 360;
+    else if (deg < -180)
+        deg += 360;
+    calibrateLastSpinDeg = deg;
+    if (deg < 0) {
         MOTOR_SPINL(max_spd);
-        HAL_Delay(ROT_1d_TIME * (-ang));
+        HAL_Delay(calibrated90DegRotTime * (-deg));
     }
     else {
         MOTOR_SPINR(max_spd);
-        HAL_Delay(ROT_1d_TIME * ang);
+        HAL_Delay(calibrated90DegRotTime * deg);
     }
     MOTOR_STOP();
     su7state.heading = dir;
 }
 
-void goDirection(const direction_t dir)
+void calibrateAndGoDir(const direction_t dir)
 {
-    rotDirection(dir);
-    autopilotCalibrate();
+    calibrateAndRotDir(dir);
+    autopilotCalibratedStraightMove();
     su7state.pos.x += dirx[dir];
     su7state.pos.y += diry[dir];
 }
@@ -227,18 +244,18 @@ void runInitialCalibration()
     HAL_Delay(150);
     LED0_Write(0);
     LED1_Write(0);
-    goDirection(X_POSITIVE);
-    goDirection(X_POSITIVE);
-    goDirection(Y_POSITIVE);
-    goDirection(X_NEGATIVE);
-    goDirection(X_NEGATIVE);
-    goDirection(Y_POSITIVE);
-    goDirection(X_POSITIVE);
-    goDirection(X_POSITIVE);
-    goDirection(Y_NEGATIVE);
-    goDirection(Y_NEGATIVE);
-    goDirection(X_NEGATIVE);
-    goDirection(X_NEGATIVE);
+    calibrateAndGoDir(X_POSITIVE);
+    calibrateAndGoDir(X_POSITIVE);
+    calibrateAndGoDir(Y_POSITIVE);
+    calibrateAndGoDir(X_NEGATIVE);
+    calibrateAndGoDir(X_NEGATIVE);
+    calibrateAndGoDir(Y_POSITIVE);
+    calibrateAndGoDir(X_POSITIVE);
+    calibrateAndGoDir(X_POSITIVE);
+    calibrateAndGoDir(Y_NEGATIVE);
+    calibrateAndGoDir(Y_NEGATIVE);
+    calibrateAndGoDir(X_NEGATIVE);
+    calibrateAndGoDir(X_NEGATIVE);
     LED0_Write(1);
     LED1_Write(1);
     HAL_Delay(150);
@@ -336,7 +353,7 @@ void safe_goto(const Waypoint en)
         return;
     }
     else if (dx + dy == 1) {
-        goDirection(GetDirection(su7state.pos, en));
+        calibrateAndGoDir(GetDirection(su7state.pos, en));
         return;
     }
     else {
@@ -352,7 +369,7 @@ void safe_goto(const Waypoint en)
             nx = explore_queue[eq_head];
             if (nx.x == su7state.pos.x && nx.y == su7state.pos.y) {
                 while (su7state.pos.x != en.x || su7state.pos.y != en.y) {
-                    goDirection(nxt[su7state.pos.x][su7state.pos.y]);
+                    calibrateAndGoDir(nxt[su7state.pos.x][su7state.pos.y]);
                 }
                 return;
             }
@@ -387,7 +404,7 @@ void safe_goto(const Waypoint en)
 
 uint8_t explore_dir(const direction_t dir)
 {
-    rotDirection(dir);
+    calibrateAndRotDir(dir);
     uint32_t tickStart = HAL_GetTick();
     uint32_t wait = calibratedHBlkTime * 2;
 

@@ -23,43 +23,64 @@ void Scene_add_waypoint(Scene *scene, Waypoint p)
     return;
 }
 
-Waypoint Scene_pop_waypoint(Scene *scene)
-{
-    return WaypointVector_pop(&scene->waypoints);
-}
+Waypoint Scene_pop_waypoint(Scene *scene) { return WaypointVector_pop(&scene->waypoints); }
 
 void Scene_set_object(Scene *scene, int32_t y, int32_t x, SceneObject obj)
 {
     scene->sceneMat[y][x] = obj;
     return;
 }
-SceneObject Scene_get_object(Scene *scene, int32_t y, int32_t x)
-{
-    return scene->sceneMat[y][x];
-}
-
+SceneObject Scene_get_object(Scene *scene, int32_t y, int32_t x) { return scene->sceneMat[y][x]; }
 
 void WaypointVector_init(WaypointVector *v)
 {
-    v->arr = NULL;
     v->length = 0UL;
-    v->_allocatedLength = 0UL;
-    return;
+    v->_allocatedLength = 10UL;
+    v->arr = (Waypoint *)malloc(v->_allocatedLength * sizeof(Waypoint));
+    if (v->arr != NULL)
+        return;
+    v->_allocatedLength = 1UL;
+    v->arr = (Waypoint *)malloc(v->_allocatedLength * sizeof(Waypoint));
+    if (v->arr != NULL)
+        return;
+    Error_Handler();
 }
 
-void WaypointVector_reallocated(WaypointVector *v, size_t newAllocatedLength)
+void WaypointVector_reserve(WaypointVector *v, size_t newAllocatedLength)
 {
     Waypoint *newStorage = NULL;
-    if ((newStorage = (Waypoint *)realloc(v->arr, newAllocatedLength * sizeof(Waypoint))) == NULL)
-        Error_Handler();
-    v->_allocatedLength = newAllocatedLength;
-    return;
+    if ((newStorage = (Waypoint *)realloc(v->arr, newAllocatedLength * sizeof(Waypoint))) != NULL) {
+        v->arr = newStorage;
+        v->_allocatedLength = newAllocatedLength;
+        return;
+    }
+    Error_Handler();
+}
+
+void WaypointVector_defaultExtend(WaypointVector *v)
+{
+    Waypoint *newStorage = NULL;
+    size_t newAllocatedLength = v->_allocatedLength * 2;
+    if (newAllocatedLength >= v->_allocatedLength) {
+        if ((newStorage = (Waypoint *)realloc(v->arr, newAllocatedLength * sizeof(Waypoint))) != NULL) {
+            v->arr = newStorage;
+            v->_allocatedLength = newAllocatedLength;
+            return;
+        }
+    }
+    newAllocatedLength = v->_allocatedLength + 1;
+    if ((newStorage = (Waypoint *)realloc(v->arr, newAllocatedLength * sizeof(Waypoint))) != NULL) {
+        v->arr = newStorage;
+        v->_allocatedLength = newAllocatedLength;
+        return;
+    }
+    Error_Handler();
 }
 
 void WaypointVector_pushback(WaypointVector *v, Waypoint w)
 {
     if (v->length >= v->_allocatedLength)
-        WaypointVector_reallocated(v, v->length + 1); // Should be *2?
+        WaypointVector_defaultExtend(v); // Should be *2?
 
     v->arr[v->length] = w;
     ++v->length;
@@ -88,13 +109,16 @@ void WaypointVector_destroy(WaypointVector *v)
     return;
 }
 
-direction_t GetDirection(const Waypoint a, const Waypoint b){
-    if (a.x < b.x) return X_POSITIVE;
-    else if (a.x > b.x) return X_NEGATIVE;
-    else if (a.y < b.y) return Y_POSITIVE;
-    else return Y_NEGATIVE;
+direction_t GetDirection(const Waypoint a, const Waypoint b)
+{
+    if (a.x < b.x)
+        return X_POSITIVE;
+    else if (a.x > b.x)
+        return X_NEGATIVE;
+    else if (a.y < b.y)
+        return Y_POSITIVE;
+    else
+        return Y_NEGATIVE;
 }
 
-float Direction2float(const direction_t dir){
-    return dir * 90;
-}
+float Direction2float(const direction_t dir) { return dir * 90; }
