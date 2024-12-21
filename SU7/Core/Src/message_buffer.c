@@ -11,6 +11,7 @@ static my_list_t *las_find = NULL;
 
 my_message_t *find_message(uint8_t code){
     my_list_t *p = message_buffer_header.next;
+    las_find = &message_buffer_header;
     while(p != NULL){
         if (((my_message_t*)(p->data))->code == code) {
             return p->data;
