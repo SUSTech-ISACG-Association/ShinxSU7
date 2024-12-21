@@ -42,12 +42,17 @@ extern "C" {
 
 /* Exported constants --------------------------------------------------------*/
 /* USER CODE BEGIN EC */
+extern uint8_t LeiJun_mode;
 extern uint8_t need_greeting_flag;
 extern uint16_t button_pressed;
+
 extern uint16_t obstacles;
 extern uint8_t start, end;
-extern int waypoint_cnt;
+extern uint8_t waypoint_cnt;
 extern uint8_t waypoint_list[100];
+extern uint8_t waypoint_state;
+
+extern uint8_t whereami, face_direction, is_race, is_running;
 /* USER CODE END EC */
 
 /* Exported macro ------------------------------------------------------------*/

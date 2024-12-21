@@ -54,18 +54,6 @@
 
 /* USER CODE BEGIN PV */
 UART_HandleTypeDef *huart;
-
-/**
- * @brief 0: Manual, 1: Waypoint, 2: Auto
- *
- */
-uint8_t LeiJun_mode = 0;
-
-/**
- * @brief 0: set_start, 1: set_end, 2: set_obstacles, 3: set_waypoints
- *
- */
-uint8_t waypoint_state = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -124,37 +112,32 @@ int main(void)
     /* USER CODE BEGIN WHILE */
     while (1) {
         // during while, send bluetooth communication
-        // if (need_greeting_flag) {
-        //     // float distance = get_distance();
-        //     float distance = 1.14;
-        //     if (LeiJun_mode == 0) {
-        //         draw_manual(distance);
-        //     }
-        //     else if (LeiJun_mode == 1) {
-        //         draw_waypoint(distance);
-        //     }
-        //     else {
-        //         draw_auto();
-        //     }
-        //     need_greeting_flag = 0;
-        // }
+        if (need_greeting_flag) {
+            float distance = get_distance();
+            if (distance >= 0) { // negative distance means no obstacle detected, do not update
+                char distance_buffer[50];
+                sprintf(distance_buffer, "Dist=%.1fcm", distance);
+                LCD_Fill_Window(10, 244, 100, 267, BACK_COLOR);
+                POINT_COLOR = WHITE;
+                LCD_ShowString(10, 244, 100, 12, 12, distance_buffer);
+            }
+            need_greeting_flag = 0;
+        }
         tp_dev.scan(0);
         if ((tp_dev.sta & TP_PRES_DOWN) && (tp_dev.x[0] <= lcddev.width && tp_dev.y[0] <= lcddev.height)) {
             if (LeiJun_mode == 0) {
                 button_pressed = which_button_pressed_manual(&tp_dev);
                 send_manual_inst();
-                draw_manual(-1);
             }
             else if (LeiJun_mode == 1) {
                 if (WITHIN_BUTTON(tp_dev.x[0], tp_dev.y[0], button_go)) {
                     // check if start, end, waypoint list are valid
-                    if (start != 0xff && end != 0xff && waypoint_cnt > 0) {
-                        if (waypoint_list[waypoint_cnt - 1] != end) {
-                            LCD_ShowString(10, 264, 100, 12, 12, "Wrong waypoints.");
-                        }
-                        else {
-                            send_waypoint();
-                        }
+                    if (start != 0xff && end != 0xff && waypoint_cnt > 0 && waypoint_list[waypoint_cnt - 1] == end) {
+                        display_info("Instruction sent");
+                        send_waypoint();
+                    }
+                    else {
+                        display_info("Invalid waypoint");
                     }
                 }
                 else if (WITHIN_BUTTON(tp_dev.x[0], tp_dev.y[0], button_clear)) {
@@ -167,6 +150,7 @@ int main(void)
                     else if (waypoint_state == 1) // end
                     {
                         end = -1;
+                        waypoint_cnt = 0;
                     }
                     else if (waypoint_state == 2) // obstacle
                     {
@@ -178,29 +162,41 @@ int main(void)
                     }
                 }
                 else {
-                    button_pressed = which_button_pressed_waypoint(&tp_dev);
-                    char buf[100];
-                    sprintf(buf, "%d,%d,0x%x", tp_dev.x[0], tp_dev.y[0], button_pressed);
-                    LCD_ShowString(10, 290, 100, 12, 12, buf);
+                    button_pressed = which_button_pressed_map(&tp_dev);
+                    display_info("");
                     if (waypoint_state == 0) {
+                        // set start, clear the waypoint list
                         for (uint8_t i = 0; i < 16; i++) {
                             if (button_pressed & (1 << i)) {
-                                start = i;
-                                waypoint_cnt = 1;
-                                waypoint_list[0] = i;
+                                if (obstacles & (1 << i)) {
+                                    display_info("Start invalid");
+                                }
+                                else {
+                                    start = i;
+                                    waypoint_cnt = 1;
+                                    waypoint_list[0] = i;
+                                }
                                 break;
                             }
                         }
                     }
                     else if (waypoint_state == 1) {
+                        // set end, clear the waypoint list
                         for (uint8_t i = 0; i < 16; i++) {
                             if (button_pressed & (1 << i)) {
-                                end = i;
+                                if (obstacles & (1 << i)) {
+                                    display_info("End invalid");
+                                }
+                                else {
+                                    end = i;
+                                    waypoint_cnt = 1;
+                                }
                                 break;
                             }
                         }
                     }
                     else if (waypoint_state == 2) {
+                        // set obstacles, clear the waypoint list if new obstacle blocks the path
                         for (uint8_t i = 0; i < 16; i++) {
                             if (button_pressed & (1 << i) && start != i && end != i) {
                                 obstacles |= (1 << i);
@@ -213,15 +209,21 @@ int main(void)
                         }
                     }
                     else {
+                        // set waypoints
                         for (uint8_t i = 0; i < 16; i++) {
                             if (button_pressed & (1 << i)) {
                                 if (waypoint_cnt == 0) {
-                                    // set start first.
+                                    display_info("Set start first");
                                 }
                                 else {
-                                    uint8_t last = waypoint_list[waypoint_cnt - 1];
-                                    if (last == i - 1 || last == i + 1 || last == i - 4 || last == i + 4) {
-                                        waypoint_list[waypoint_cnt++] = i;
+                                    if (obstacles & (1 << i)) {
+                                        display_info("Waypoint invalid");
+                                    }
+                                    else {
+                                        uint8_t last = waypoint_list[waypoint_cnt - 1];
+                                        if (last == i - 1 || last == i + 1 || last == i - 4 || last == i + 4) {
+                                            waypoint_list[waypoint_cnt++] = i;
+                                        }
                                     }
                                 }
                                 break;
@@ -229,11 +231,30 @@ int main(void)
                         }
                     }
                 }
-                draw_waypoint(-1);
             }
             else {
-                button_pressed = which_button_pressed_auto(&tp_dev);
+                button_pressed = which_button_pressed_map(&tp_dev);
+                display_info("");
+                if (WITHIN_BUTTON(tp_dev.x[0], tp_dev.y[0], button_mode)) {
+                    is_race = is_race ? 0 : 1;
+                    char buf[50];
+                    sprintf(buf, is_race ? "now race" : "now detect");
+                    display_info(buf);
+                    if (is_running) {
+                        is_running = 0;
+                        send_toggle_run();
+                    }
+                    send_set_mode(is_race ? 0x04 : 0x03);
+                }
+                else if (WITHIN_BUTTON(tp_dev.x[0], tp_dev.y[0], button_go)) {
+                    is_running = is_running ? 0 : 1;
+                    char buf[50];
+                    sprintf(buf, is_running ? "now running" : "now stopped");
+                    display_info(buf);
+                    send_toggle_run();
+                }
             }
+            drawUI();
         }
         /* USER CODE END WHILE */
 
@@ -279,8 +300,6 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-
-static const uint16_t lll = 7;
 
 /* USER CODE END 4 */
 

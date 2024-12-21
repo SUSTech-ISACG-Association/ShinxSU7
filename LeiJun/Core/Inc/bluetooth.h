@@ -7,8 +7,37 @@
 extern UART_HandleTypeDef *huart;
 extern uint16_t button_pressed;
 
+
+/**
+ * @brief send instruction setting to the desired mode
+ * 
+ * @param mode 
+ */
+void send_set_mode(uint8_t mode);
+
+/**
+ * @brief consume ack2, then positively get distance of the obstacle ahead
+ * 
+ * @return float 4-byte distance
+ */
 float get_distance();
-uint8_t send_manual_inst();
+
+/**
+ * @brief send instructions according to manual control
+ * 
+ */
+void send_manual_inst();
+
+/**
+ * @brief send waypoint list to SU7
+ * 
+ */
 void send_waypoint();
+
+/**
+ * @brief to run or to stop, this is a question
+ * 
+ */
+void send_toggle_run();
 
 #endif

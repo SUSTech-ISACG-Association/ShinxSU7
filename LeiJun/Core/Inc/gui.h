@@ -25,6 +25,12 @@ void draw_button_color(uint16_t sx, uint16_t sy, uint16_t ex, uint16_t ey, const
 
 void draw_button_image(uint16_t sx, uint16_t sy, uint16_t ex, uint16_t ey, const uint16_t *color, button_area *button);
 
+void display_info(char *buf);
+
+/**
+ * @brief Draw component of waypoint mode
+ * 
+ */
 void draw_waypoint_objects();
 
 /**
@@ -35,7 +41,7 @@ void draw_waypoint_objects();
  *
  * @param distance distance to the obstacle ahead
  */
-void draw_manual(float distance);
+void draw_manual();
 
 /**
  * @brief Draw UI for waypoint control mode
@@ -44,13 +50,13 @@ void draw_manual(float distance);
  * a button to switch between modes setting different elements:
  * 4 states: set_start, set_end, set_obstacles, set_waypoints
  */
-void draw_waypoint(float distance);
+void draw_waypoint();
 
 /**
  * @brief Draw UI for auto control modes: sweeping and racing
  *
  * 2 buttons: start_sweep, start_race
  */
-void draw_auto(float distance);
+void draw_auto();
 
-void drawUI(float distance);
+void drawUI();

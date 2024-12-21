@@ -274,10 +274,10 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
         if (HAL_GPIO_ReadPin(KEY1_GPIO_Port, KEY1_Pin) == GPIO_PIN_RESET) {
             // KEY1 for set object switching
             if (LeiJun_mode == 1) {
+                // 0: set_start, 1: set_end, 2: set_obstacles, 3: set_waypoints
                 waypoint_state = (waypoint_state + 1) % 4;
                 draw_waypoint(-1);
             }
-            // 0: set_start, 1: set_end, 2: set_obstacles, 3: set_waypoints
         }
         break;
     case WK_UP_Pin:
@@ -287,12 +287,15 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
             LCD_Clear(BACK_COLOR);
             switch (LeiJun_mode) {
             case 0:
+                send_set_mode(0x01);
                 draw_manual(-1);
                 break;
             case 1:
+                send_set_mode(0x02);
                 draw_waypoint(-1);
                 break;
             case 2:
+                send_set_mode(0x03);
                 draw_auto(-1);
                 break;
             default:
