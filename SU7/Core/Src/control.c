@@ -53,7 +53,7 @@ static inline uint8_t calibrateReadSearchState()
 }
 
 #define CALIB_TIME_DECAY_COEFF 0.75f
-static uint32_t calib1BlkTime = 0;
+static uint32_t calibHBlkTime = 0;
 
 // Spin until SU7 faces right toward the next square
 // i.e., the current orientation makes a 90 degree angle
@@ -67,29 +67,23 @@ void autopilotCalibrate()
     // First set to forward and record the startTick of forward
     // which will later be used to calibrate the speed
     MOTOR_FORWARD(max_spd);
+    LED0_Write(0);
+    LED1_Write(0);
     uint32_t enterStartTick = HAL_GetTick();
-    uint32_t enterEndTick = 0;
+    uint32_t enterEndTick = UINT32_MAX;
     uint32_t exitStartTick = 0;
-    uint32_t exitEndTick = 0;
+    uint32_t exitEndTick = UINT32_MAX;
 
     CalibState_t state = CalibState_Entering;
 
     while (state != CalibState_Complete) {
+        HAL_Delay(5);
         uint8_t searchState = calibrateReadSearchState();
 
-        if (searchState != 0b000 && enterEndTick == 0)
+        if (searchState != 0b000 && enterEndTick == UINT32_MAX)
         {
             enterEndTick = HAL_GetTick();
         }
-        if (state == CalibState_PassingThrough && exitStartTick == 0)
-        {
-            exitStartTick = HAL_GetTick();
-        }
-
-        MOTOR_STOP();
-        LED0_Write(state&1);
-        LED1_Write((state>>2)&1);
-        HAL_Delay(1000);
 
         switch (searchState) {
         case 0b000:
@@ -119,51 +113,67 @@ void autopilotCalibrate()
             break;
         }
 
+        if (state == CalibState_Exiting && exitStartTick == 0)
+        {
+            exitStartTick = HAL_GetTick();
+        }
+
         switch (state) {
         case CalibState_Entering:
-            LED0_Write(1);
-            LED1_Write(0);
             MOTOR_FORWARD(max_spd);
+            LED0_Write(0);
+            LED1_Write(0);
             break;
         case CalibState_PassingThrough:
-            LED0_Write(0);
-            LED1_Write(1);
             MOTOR_FORWARD(max_spd);
+            LED0_Write(1);
+            LED1_Write(0);
             break;
         case CalibState_Exiting:
-            LED0_Write(1);
-            LED1_Write(1);
-            if (HAL_GetTick() - exitStartTick > enterEndTick - enterStartTick)
+            if ((exitEndTick = HAL_GetTick()) - exitStartTick > enterEndTick - enterStartTick)
             {
                 state = CalibState_Complete;
                 MOTOR_STOP();
+                LED0_Write(1);
+                LED1_Write(1);
             }
             else
             {
                 MOTOR_FORWARD(max_spd);
+                LED0_Write(0);
+                LED1_Write(1);
             }
             break;
         case CalibState_SpinL:
-            // MOTOR_SPINL(max_spd - 20);
-            MOTOR_SET_SPD(max_spd - 20, -(max_spd - 30));
+            MOTOR_SPINL(max_spd - 20);
+            // MOTOR_SET_SPD(max_spd - 20, -(max_spd - 30));
+            // LED0_Write(1);
+            // LED1_Write(0);
             break;
         case CalibState_SpinR:
-            // MOTOR_SPINR(max_spd - 20);
-            MOTOR_SET_SPD(-(max_spd - 20), (max_spd - 20));
+            MOTOR_SPINR(max_spd - 20);
+            // MOTOR_SET_SPD(-(max_spd - 20), (max_spd - 20));
+            // LED0_Write(0);
+            // LED1_Write(1);
             break;
         case CalibState_Complete:
-            LED0_Write(0);
-            LED1_Write(0);
+            // LED0_Write(0);
+            // LED1_Write(0);
             MOTOR_STOP();
             break;
         }
     }
-    // Update current 1-block-required time based on #ticks elapsed
-    uint32_t tickElapsed = exitEndTick - enterStartTick;
-    if (calib1BlkTime == 0)
-        calib1BlkTime = tickElapsed;
+    // Update current half-block-required time based on #ticks elapsed
+    uint32_t tickElapsed = exitEndTick - exitStartTick;
+    if (calibHBlkTime == 0)
+        calibHBlkTime = tickElapsed;
     else
-        calib1BlkTime = (uint32_t)(tickElapsed * (1 - CALIB_TIME_DECAY_COEFF) + calib1BlkTime * CALIB_TIME_DECAY_COEFF);
+        calibHBlkTime = (uint32_t)(tickElapsed * (1 - CALIB_TIME_DECAY_COEFF) + calibHBlkTime * CALIB_TIME_DECAY_COEFF);
+
+    uint32_t enterTickElapsed = enterEndTick - enterStartTick;
+    uint32_t exitTickElapsed = exitEndTick - exitStartTick;
+    append_my_message(0x82, (uint8_t *)&enterTickElapsed, sizeof(uint32_t));
+    append_my_message(0x82, (uint8_t *)&exitTickElapsed, sizeof(uint32_t));
 }
 
 void goDirection(const direction_t dir)
@@ -388,6 +398,7 @@ static RaceState_t race_state = FOLLOWING;
 void autorace_update()
 {
 RE_UPDATE:
+    HAL_Delay(5);
     uint8_t now_stateL = HAL_GPIO_ReadPin(SEARCH_L_GPIO_Port, SEARCH_L_Pin) == GPIO_PIN_SET;
     uint8_t now_stateM = HAL_GPIO_ReadPin(SEARCH_M_GPIO_Port, SEARCH_M_Pin) == GPIO_PIN_SET;
     uint8_t now_stateR = HAL_GPIO_ReadPin(SEARCH_R_GPIO_Port, SEARCH_R_Pin) == GPIO_PIN_SET;

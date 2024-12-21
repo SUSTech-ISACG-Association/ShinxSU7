@@ -157,7 +157,27 @@ void bluetooth_RxCallback()
         bluetooth_sendACK2(0x00);
         start_bluetooth_IT();
         break;
-        // TODO: finish this
+    
+    case 0x82:
+        p = find_message(0x82);
+        if (p == NULL)
+        {
+            // Send NACK
+            bluetooth_sendACK1(0xFF);
+            break;
+        }
+        bluetooth_sendACK1(0x00);
+        HAL_Delay(1);
+        HAL_UART_Transmit(huart, p->data, p->length, 0xffff);
+        remove_last_find_message();
+        HAL_Delay(1);
+        p = find_message(0x82);
+        HAL_UART_Transmit(huart, p->data, p->length, 0xffff);
+        remove_last_find_message();
+
+        bluetooth_sendACK2(0x00);
+        start_bluetooth_IT();
+        // TODO: Add handler for other codes
 
     default:
         start_bluetooth_IT();
