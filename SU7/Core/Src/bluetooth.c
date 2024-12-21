@@ -99,23 +99,26 @@ void bluetooth_RxCallback()
         }
         break;
     case 0x20:
-        if (flag == 0) {
-            bluetooth_sendACK1(0x00);
-            HAL_UART_Receive_IT(huart, &proto_code, 1);
-            flag = 1;
+        bluetooth_sendACK1(0x00);
+        uint8_t cc;
+        HAL_UART_Receive(huart, &cc, 1, 0xffff);
+        while (cc != 0xff){
+            Scene_add_waypoint(&ShinxScene1, (Waypoint){cc & 0x3, cc >> 2});
+            HAL_UART_Receive(huart, &cc, 1, 0xffff);
         }
-        else {
-            uint8_t cc = *((uint8_t *)(&proto_code));
-            if (cc == 0xff) {
-                bluetooth_sendACK2(0x00);
-                su7state = (SU7State_t){ShinxScene1.waypoints.arr[0], Y_NEGATIVE};
-                start_bluetooth_IT();
-                flag = 0;
-            }
-            else {
-                Scene_add_waypoint(&ShinxScene1, (Waypoint){cc >> 2, cc & 0x4});
-            }
-        }
+        bluetooth_sendACK2(0x00);
+        su7state = (SU7State_t){ShinxScene1.waypoints.arr[0], Y_NEGATIVE};
+        start_bluetooth_IT();
+        flag = 0;
+        break;
+    case 0x30:
+        bluetooth_sendACK1(0x00);
+        HAL_UART_Receive(huart, &proto_buffer, 2, 0xffff);
+        uint8_t st = *((uint8_t *)(&proto_buffer));
+        uint8_t en = *((uint8_t *)(&proto_buffer)+1);
+        set_autovoid_position((Waypoint){st & 0x3, st >> 2}, (Waypoint){en & 0x3, en >> 2});
+        bluetooth_sendACK2(0x00);
+        start_bluetooth_IT();
         break;
     case 0x80:
         bluetooth_sendACK1(0x00);
@@ -144,6 +147,21 @@ void bluetooth_RxCallback()
         bluetooth_sendACK2(0x00);
         start_bluetooth_IT();
         break;
+    case 0x81:
+        bluetooth_sendACK1(0x00);
+        HAL_Delay(1);
+        p = find_message(0x81);
+        if (p != NULL) {
+            HAL_UART_Transmit(huart, p->data, p->length, 0xffff);
+            remove_last_find_message();
+        }
+        else {
+            proto_buffer = 0xffffffff;
+            HAL_UART_Transmit(huart, (uint8_t *)&proto_buffer, 1, 0xffff);
+        }
+        bluetooth_sendACK2(0x00);
+        start_bluetooth_IT();
+        break;
     
     case 0x82:
         p = find_message(0x82);
@@ -166,6 +184,7 @@ void bluetooth_RxCallback()
 
         bluetooth_sendACK2(0x00);
         start_bluetooth_IT();
+        break;
         // TODO: Add handler for other codes
 
     default:
