@@ -62,7 +62,7 @@ float calibrateLastSpinDeg = 0.0f;
 // Spin until SU7 faces right toward the next square
 // i.e., the current orientation makes a 90 degree angle
 // relative to the borderline of the current square
-void autopilotCalibratedStraightMove()
+void calibrateOneStepForward()
 {
     // We make the assumption that the first time we
     // come across a border, our orientation must be
@@ -239,7 +239,7 @@ void calibrateAndRotDir(const direction_t dir)
 void calibrateAndGoDir(const direction_t dir)
 {
     calibrateAndRotDir(dir);
-    autopilotCalibratedStraightMove();
+    calibrateOneStepForward();
     su7state.pos.x += dirx[dir];
     su7state.pos.y += diry[dir];
 }

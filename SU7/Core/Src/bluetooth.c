@@ -127,23 +127,11 @@ void bluetooth_RxCallback()
         if (p != NULL) {
             HAL_UART_Transmit(huart, p->data, p->length, 0xffff);
             remove_last_find_message();
-#ifndef NDEBUG
-            HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, GPIO_PIN_RESET);
-#endif
         }
         else {
             float dis = SonicDetect(90); // sonic priority: 0, UART priority: 1
             HAL_UART_Transmit(huart, (uint8_t *)&dis, sizeof(dis), 0xffff);
-#ifndef NDEBUG
-            HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_RESET);
-#endif
         }
-#ifndef NDEBUG
-        HAL_Delay(20);
-        HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, GPIO_PIN_SET);
-        HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_SET);
-#endif
-
         bluetooth_sendACK2(0x00);
         start_bluetooth_IT();
         break;

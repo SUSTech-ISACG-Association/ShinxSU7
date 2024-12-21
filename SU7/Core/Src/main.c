@@ -147,13 +147,13 @@ int main(void)
     key = Remote_Scan();
     switch(key)
     {
-      case 98:  MOTOR_FORWARD(100);      break;
-      case 2:   MOTOR_STOP();end_mode(); break;
-      case 194: MOTOR_TURNR(100);        break;
-      case 34:  MOTOR_TURNL(100);        break;
-      case 224: MOTOR_SPINL(100);        break;
-      case 168: MOTOR_BACK(100);         break;
-      case 144: MOTOR_SPINR(100);        break;
+      case 98:  MOTOR_FORWARD(100);       break;
+      case 2:   MOTOR_STOP(); end_mode(); break;
+      case 194: MOTOR_TURNR(100);         break;
+      case 34:  MOTOR_TURNL(100);         break;
+      case 224: MOTOR_SPINL(100);         break;
+      case 168: MOTOR_BACK(100);          break;
+      case 144: MOTOR_SPINR(100);         break;
     }
 
     if (SU7Running) {
@@ -163,7 +163,7 @@ int main(void)
           end_mode();
           wayi = 0;
         } else {
-          direction_t dir = GetDirection(ShinxScene1.waypoints.arr[wayi], ShinxScene1.waypoints.arr[wayi+1]);
+          direction_t dir = GetDirection(ShinxScene1.waypoints.arr[wayi], ShinxScene1.waypoints.arr[wayi + 1]);
           calibrateAndGoDir(dir);
           ++wayi;
         }
