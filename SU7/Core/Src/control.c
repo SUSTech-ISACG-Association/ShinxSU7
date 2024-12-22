@@ -675,6 +675,11 @@ RE_UPDATE:
 
 void control_init()
 {
+    for(int32_t i = 0; i < SCENE_COORDS_MAX_X; ++i)
+        for(int32_t j = 0; j < SCENE_COORDS_MAX_Y; ++j)
+            Scene_set_object(&ShinxScene1, i, j, SO_Unknown);
+    Scene_set_object(&ShinxScene1, autoavoid_start.x, autoavoid_start.y, SO_Source);
+    Scene_set_object(&ShinxScene1, autoavoid_end.x, autoavoid_end.y, SO_Destination);
     race_state = FOLLOWING;
     es_head = 0;
 }
