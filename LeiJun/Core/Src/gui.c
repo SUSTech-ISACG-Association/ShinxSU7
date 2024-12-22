@@ -200,23 +200,23 @@ void draw_auto()
     for (int i = 0; i < 4; i++) {
         for (int j = 0; j < 4; j++) {
 			// TODO: replace text with image
-            if (i * 4 + j == whereami && whereami == start) {
+            if ((i << 2) + j == whereami && whereami == start) {
                 draw_button_text(20 + j * 50, 40 + i * 50, 70 + j * 50, 90 + i * 50, 16, "(S)",
                                  (button_map + i * 4 + j));
             }
-			else if(i * 4 + j == whereami && whereami == end){
+			else if((i << 2) + j == whereami && whereami == end){
 				draw_button_text(20 + j * 50, 40 + i * 50, 70 + j * 50, 90 + i * 50, 16, "(E)",
 								 (button_map + i * 4 + j));
 			}
-			else if (i * 4 + j == whereami) {
+			else if ((i << 2) + j == whereami) {
 				draw_button_text(20 + j * 50, 40 + i * 50, 70 + j * 50, 90 + i * 50, 16, "()",
 								 (button_map + i * 4 + j));
 			}
-			else if (i * 4 + j == start) {
+			else if ((i << 2) + j == start) {
 				draw_button_text(20 + j * 50, 40 + i * 50, 70 + j * 50, 90 + i * 50, 16, "S",
 								 (button_map + i * 4 + j));
 			}
-			else if (i * 4 + j == end) {
+			else if ((i << 2) + j == end) {
 				draw_button_text(20 + j * 50, 40 + i * 50, 70 + j * 50, 90 + i * 50, 16, "E",
 								 (button_map + i * 4 + j));
 			}
