@@ -1,21 +1,21 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
-  * @file    stm32f1xx_it.c
-  * @brief   Interrupt Service Routines.
-  ******************************************************************************
-  * @attention
-  *
-  * <h2><center>&copy; Copyright (c) 2024 STMicroelectronics.
-  * All rights reserved.</center></h2>
-  *
-  * This software component is licensed by ST under BSD 3-Clause license,
-  * the "License"; You may not use this file except in compliance with the
-  * License. You may obtain a copy of the License at:
-  *                        opensource.org/licenses/BSD-3-Clause
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * @file    stm32f1xx_it.c
+ * @brief   Interrupt Service Routines.
+ ******************************************************************************
+ * @attention
+ *
+ * <h2><center>&copy; Copyright (c) 2024 STMicroelectronics.
+ * All rights reserved.</center></h2>
+ *
+ * This software component is licensed by ST under BSD 3-Clause license,
+ * the "License"; You may not use this file except in compliance with the
+ * License. You may obtain a copy of the License at:
+ *                        opensource.org/licenses/BSD-3-Clause
+ *
+ ******************************************************************************
+ */
 /* USER CODE END Header */
 
 /* Includes ------------------------------------------------------------------*/
@@ -23,6 +23,8 @@
 #include "stm32f1xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "bluetooth.h"
+#include "gui.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -58,7 +60,9 @@
 /* External variables --------------------------------------------------------*/
 extern TIM_HandleTypeDef htim3;
 /* USER CODE BEGIN EV */
-
+extern uint8_t need_greeting_flag;
+extern uint8_t LeiJun_mode;
+extern uint8_t waypoint_state;
 /* USER CODE END EV */
 
 /******************************************************************************/
@@ -73,9 +77,8 @@ void NMI_Handler(void)
 
   /* USER CODE END NonMaskableInt_IRQn 0 */
   /* USER CODE BEGIN NonMaskableInt_IRQn 1 */
-  while (1)
-  {
-  }
+    while (1) {
+    }
   /* USER CODE END NonMaskableInt_IRQn 1 */
 }
 
@@ -200,34 +203,6 @@ void SysTick_Handler(void)
 /******************************************************************************/
 
 /**
-  * @brief This function handles EXTI line0 interrupt.
-  */
-void EXTI0_IRQHandler(void)
-{
-  /* USER CODE BEGIN EXTI0_IRQn 0 */
-
-  /* USER CODE END EXTI0_IRQn 0 */
-  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_0);
-  /* USER CODE BEGIN EXTI0_IRQn 1 */
-
-  /* USER CODE END EXTI0_IRQn 1 */
-}
-
-/**
-  * @brief This function handles EXTI line[9:5] interrupts.
-  */
-void EXTI9_5_IRQHandler(void)
-{
-  /* USER CODE BEGIN EXTI9_5_IRQn 0 */
-
-  /* USER CODE END EXTI9_5_IRQn 0 */
-  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_5);
-  /* USER CODE BEGIN EXTI9_5_IRQn 1 */
-
-  /* USER CODE END EXTI9_5_IRQn 1 */
-}
-
-/**
   * @brief This function handles TIM3 global interrupt.
   */
 void TIM3_IRQHandler(void)
@@ -241,38 +216,67 @@ void TIM3_IRQHandler(void)
   /* USER CODE END TIM3_IRQn 1 */
 }
 
-/**
-  * @brief This function handles EXTI line[15:10] interrupts.
-  */
-void EXTI15_10_IRQHandler(void)
-{
-  /* USER CODE BEGIN EXTI15_10_IRQn 0 */
-
-  /* USER CODE END EXTI15_10_IRQn 0 */
-  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_15);
-  /* USER CODE BEGIN EXTI15_10_IRQn 1 */
-
-  /* USER CODE END EXTI15_10_IRQn 1 */
-}
-
 /* USER CODE BEGIN 1 */
-__weak void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
-	HAL_Delay(100);
-	switch (GPIO_Pin) {
-		case KEY0_Pin:
-			if (HAL_GPIO_ReadPin(KEY0_GPIO_Port, KEY0_Pin) == GPIO_PIN_RESET) {
-			}
-			break;
-		case KEY1_Pin:
-			if (HAL_GPIO_ReadPin(KEY1_GPIO_Port, KEY1_Pin) == GPIO_PIN_RESET) {
-			}
-			break;
-		default: break;
-	}
-}
+// void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+// {
+//     HAL_Delay(50);
+//     switch (GPIO_Pin) {
+//     case KEY0_Pin:
+//         if (HAL_GPIO_ReadPin(KEY0_GPIO_Port, KEY0_Pin) == GPIO_PIN_RESET) {
+//             // KEY0 for emergent stop
+//             uint8_t opcode = 0x10;
+//             uint8_t receive_buffer = 0x00;
+//             HAL_UART_Transmit(huart, &opcode, 1, 0xffff);
+//             HAL_UART_Receive(huart, &receive_buffer, 1, 0xffff);
+//             uint8_t control[4] = {0, 0, 0, 0};
+//             HAL_UART_Transmit(huart, control, 4, 0xffff);
+//         }
+//         break;
+//     case KEY1_Pin:
+//         if (HAL_GPIO_ReadPin(KEY1_GPIO_Port, KEY1_Pin) == GPIO_PIN_RESET) {
+//             // KEY1 for set object switching
+//             if (LeiJun_mode == 1) {
+//                 // 0: set_start, 1: set_end, 2: set_obstacles, 3: set_waypoints
+//                 waypoint_state = (waypoint_state + 1) % 4;
+//                 draw_waypoint(-1);
+//             }
+//         }
+//         break;
+//     case WK_UP_Pin:
+//         if (HAL_GPIO_ReadPin(WK_UP_GPIO_Port, WK_UP_Pin) == GPIO_PIN_SET) {
+//             // WK_UP for mode swtich
+//             LeiJun_mode = (LeiJun_mode + 1) % 3;
+//             LCD_Clear(BACK_COLOR);
+// 			reset_states();
+//             switch (LeiJun_mode) {
+//             case 0:
+//                 send_set_mode(0x01);
+//                 draw_manual(-1);
+//                 break;
+//             case 1:
+//                 send_set_mode(0x02);
+//                 draw_waypoint(-1);
+//                 break;
+//             case 2:
+//                 send_set_mode(0x03);
+//                 draw_auto(-1);
+//                 break;
+//             default:
+//                 break;
+//             }
+//             // 0: Manual, 1: Waypoint, 2: Auto
+//         }
+//         break;
+//     default:
+//         break;
+//     }
+// }
 
-__weak void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
-
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+    // tim3 -> 500 ms
+    if (htim->Instance == TIM3) {
+        need_greeting_flag = 1;
+    }
 }
 /* USER CODE END 1 */
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

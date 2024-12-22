@@ -1,37 +1,39 @@
 #ifndef _OBJECTS_H
 #define _OBJECTS_H
 
+#include "touch.h"
 #include <stdint.h>
 
-typedef struct list
-{
-    void* data;
-    struct list *next;
-} list_t;
+#define WITHIN_BUTTON(x, y, button_instance)                                                                           \
+    ((((button_instance.sx) <= (x)) && ((x) <= (button_instance.ex))) &&                                               \
+     (((button_instance.sy) <= (y)) && ((y) <= (button_instance.ey))))
 
-extern list_t obj_list_head;
+typedef struct button_area_t {
+    uint16_t sx, sy, ex, ey;
+} button_area;
 
-void insert_lt(list_t *p, void *o);
-void free_lt(list_t *p);
-void remove_lt(list_t *p);
+extern button_area button_manual[9];
+extern button_area button_map[16];
+extern button_area button_go, button_clear;
+extern button_area button_mode, button_race;
+extern uint8_t LeiJun_mode;
 
-typedef struct img{
-    const uint16_t *data;
-    uint16_t img_x, img_y, scale;
-} img_t;
+/**
+ * @brief get the button pressed in manual mode as a uint16_t bitmap
+ *
+ * @param p pointer to the touch panel device
+ * @return uint16_t bitmap of the button pressed[0-8]
+ */
+uint16_t which_button_pressed_manual(_m_tp_dev *p);
 
-typedef enum object_type{
-    OBSTACLE,
-    BUTTON,
-} object_type_t;
+/**
+ * @brief get the button pressed in waypoint mode as a uint16_t bitmap
+ *
+ * @param p pointer to the touch panel device
+ * @return uint16_t bitmap of the button pressed[0-15]
+ */
+uint16_t which_button_pressed_map(_m_tp_dev *p);
 
-typedef struct myobj{
-    int16_t x, y;
-    img_t *data;
-    object_type_t type;
-} myobj_t;
-
-const img_t *get_obj_img(const myobj_t* o);
-myobj_t* new_myobj(uint16_t x, uint16_t y, object_type_t ot);
+void reset_states();
 
 #endif

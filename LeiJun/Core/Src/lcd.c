@@ -596,11 +596,12 @@ void LCD_Fill(uint16_t sx, uint16_t sy, uint16_t ex, uint16_t ey, uint16_t color
 // :(xend-xsta+1)*(yend-ysta+1)
 void LCD_Fill_Window(uint16_t sx, uint16_t sy, uint16_t ex, uint16_t ey, uint16_t color)
 {
-    if (sx >= ex || sy >= ey) return;
+    if (sx >= ex || sy >= ey)
+        return;
     uint16_t i, j;
     uint16_t xlen = 0;
     xlen = ex - sx + 1;
-    LCD_Set_Window(sx, sy, ex-sx+1, ey-sy+1);
+    LCD_Set_Window(sx, sy, ex - sx + 1, ey - sy + 1);
     LCD_SetCursor(sx, sy);  // 设置光标位置
     LCD_WriteRAM_Prepare(); // 开始写入GRAM
     for (i = sy; i <= ey; i++) {
@@ -753,7 +754,7 @@ void LCD_ShowChar(uint16_t x, uint16_t y, uint8_t num, uint8_t size, uint8_t mod
 {
     uint8_t temp, t1, t;
     uint16_t y0 = y;
-    uint8_t csize = (size / 8 + ((size % 8) ? 1 : 0)) * (size / 2); // 得到字体一个字符对应点阵集所占的字节数
+    uint8_t csize = (size / 8 + ((size % 8) ? 1 : 0)) * (size >> 1); // 得到字体一个字符对应点阵集所占的字节数
     num = num - ' '; // 得到偏移后的值（ASCII字库是从空格开始取模，所以-' '就是对应字符的字库）
     for (t = 0; t < csize; t++) {
         if (size == 12)
@@ -805,13 +806,13 @@ void LCD_ShowNum(uint16_t x, uint16_t y, uint32_t num, uint8_t len, uint8_t size
         temp = (num / LCD_Pow(10, len - t - 1)) % 10;
         if (enshow == 0 && t < (len - 1)) {
             if (temp == 0) {
-                LCD_ShowChar(x + (size / 2) * t, y, ' ', size, 0);
+                LCD_ShowChar(x + (size >> 1) * t, y, ' ', size, 0);
                 continue;
             }
             else
                 enshow = 1;
         }
-        LCD_ShowChar(x + (size / 2) * t, y, temp + '0', size, 0);
+        LCD_ShowChar(x + (size >> 1) * t, y, temp + '0', size, 0);
     }
 }
 
@@ -832,15 +833,15 @@ void LCD_ShowxNum(uint16_t x, uint16_t y, uint32_t num, uint8_t len, uint8_t siz
         if (enshow == 0 && t < (len - 1)) {
             if (temp == 0) {
                 if (mode & 0X80)
-                    LCD_ShowChar(x + (size / 2) * t, y, '0', size, mode & 0X01);
+                    LCD_ShowChar(x + (size >> 1) * t, y, '0', size, mode & 0X01);
                 else
-                    LCD_ShowChar(x + (size / 2) * t, y, ' ', size, mode & 0X01);
+                    LCD_ShowChar(x + (size >> 1) * t, y, ' ', size, mode & 0X01);
                 continue;
             }
             else
                 enshow = 1;
         }
-        LCD_ShowChar(x + (size / 2) * t, y, temp + '0', size, mode & 0X01);
+        LCD_ShowChar(x + (size >> 1) * t, y, temp + '0', size, mode & 0X01);
     }
 }
 // Display a string
@@ -862,7 +863,7 @@ void LCD_ShowString(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uin
         if (y >= height)
             break; // 退出
         LCD_ShowChar(x, y, *p, size, 0);
-        x += size / 2;
+        x += size >> 1;
         p++;
     }
 }
@@ -885,13 +886,13 @@ void LCD_ShowString_trans(uint16_t x, uint16_t y, uint16_t width, uint16_t heigh
         if (y >= height)
             break; // 退出
         LCD_ShowChar(x, y, *p, size, 1);
-        x += size / 2;
+        x += size >> 1;
         p++;
     }
 }
 
-void LCD_myColor_Fill_trans(int16_t sx, int16_t sy, int16_t ex, int16_t ey, const uint16_t *color,
-                            const uint16_t *mask, int scale)
+void LCD_myColor_Fill_trans(int16_t sx, int16_t sy, int16_t ex, int16_t ey, const uint16_t *color, const uint16_t *mask,
+                            int scale)
 {
     uint16_t height = ey - sy + 1, width = ex - sx + 1, i, j, k, l, idv, idx;
     int16_t dpx = sx, dpy = sy;
@@ -905,13 +906,13 @@ void LCD_myColor_Fill_trans(int16_t sx, int16_t sy, int16_t ex, int16_t ey, cons
                     LCD_Fast_DrawPoint_ck(dpy, dpx, color[idx]);
                 }
                 dpx += scale;
-                if (dpx >= lcddev.width){
+                if (dpx >= lcddev.width) {
                     break;
                 }
             }
             dpx = sx;
             dpy += scale;
-            if (dpy >= lcddev.height){
+            if (dpy >= lcddev.height) {
                 break;
             }
         }
@@ -929,13 +930,13 @@ void LCD_myColor_Fill_trans(int16_t sx, int16_t sy, int16_t ex, int16_t ey, cons
                     LCD_Fast_DrawPoint_ck(dpy + 1, dpx + 1, color[idx]);
                 }
                 dpx += scale;
-                if (dpx >= lcddev.width){
+                if (dpx >= lcddev.width) {
                     break;
                 }
             }
             dpx = sx;
             dpy += scale;
-            if (dpy >= lcddev.width){
+            if (dpy >= lcddev.width) {
                 break;
             }
         }
@@ -954,13 +955,13 @@ void LCD_myColor_Fill_trans(int16_t sx, int16_t sy, int16_t ex, int16_t ey, cons
                     }
                 }
                 dpx += scale;
-                if (dpx >= lcddev.width){
+                if (dpx >= lcddev.width) {
                     break;
                 }
             }
             dpx = sx;
             dpy += scale;
-            if (dpy >= lcddev.width){
+            if (dpy >= lcddev.width) {
                 break;
             }
         }

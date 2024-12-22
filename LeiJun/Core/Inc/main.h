@@ -1,22 +1,22 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
-  * @file           : main.h
-  * @brief          : Header for main.c file.
-  *                   This file contains the common defines of the application.
-  ******************************************************************************
-  * @attention
-  *
-  * <h2><center>&copy; Copyright (c) 2024 STMicroelectronics.
-  * All rights reserved.</center></h2>
-  *
-  * This software component is licensed by ST under BSD 3-Clause license,
-  * the "License"; You may not use this file except in compliance with the
-  * License. You may obtain a copy of the License at:
-  *                        opensource.org/licenses/BSD-3-Clause
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * @file           : main.h
+ * @brief          : Header for main.c file.
+ *                   This file contains the common defines of the application.
+ ******************************************************************************
+ * @attention
+ *
+ * <h2><center>&copy; Copyright (c) 2024 STMicroelectronics.
+ * All rights reserved.</center></h2>
+ *
+ * This software component is licensed by ST under BSD 3-Clause license,
+ * the "License"; You may not use this file except in compliance with the
+ * License. You may obtain a copy of the License at:
+ *                        opensource.org/licenses/BSD-3-Clause
+ *
+ ******************************************************************************
+ */
 /* USER CODE END Header */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
@@ -32,7 +32,7 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include <stdio.h>
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
@@ -42,9 +42,17 @@ extern "C" {
 
 /* Exported constants --------------------------------------------------------*/
 /* USER CODE BEGIN EC */
-extern uint8_t uRx_Data[1024], rxBuffer[20];
-extern int uLength;
-extern const uint8_t obstacle_image[1800];
+extern uint8_t LeiJun_mode;
+extern uint8_t need_greeting_flag;
+extern uint16_t button_pressed;
+
+extern uint16_t obstacles;
+extern uint8_t start, end;
+extern uint8_t waypoint_cnt;
+extern uint8_t waypoint_list[100];
+extern uint8_t waypoint_state;
+
+extern uint8_t whereami, face_direction, is_race, is_running, is_setting_start;
 /* USER CODE END EC */
 
 /* Exported macro ------------------------------------------------------------*/
@@ -62,17 +70,15 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define WK_UP_Pin GPIO_PIN_0
 #define WK_UP_GPIO_Port GPIOA
-#define WK_UP_EXTI_IRQn EXTI0_IRQn
 #define KEY0_Pin GPIO_PIN_5
 #define KEY0_GPIO_Port GPIOC
-#define KEY0_EXTI_IRQn EXTI9_5_IRQn
 #define LED0_Pin GPIO_PIN_8
 #define LED0_GPIO_Port GPIOA
 #define KEY1_Pin GPIO_PIN_15
 #define KEY1_GPIO_Port GPIOA
-#define KEY1_EXTI_IRQn EXTI15_10_IRQn
 #define LED1_Pin GPIO_PIN_2
 #define LED1_GPIO_Port GPIOD
+
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
@@ -82,5 +88,3 @@ void Error_Handler(void);
 #endif
 
 #endif /* __MAIN_H */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

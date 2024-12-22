@@ -1,62 +1,62 @@
 #include "objects.h"
-#include "control.h"
-#include "main.h"
-#include "lcd.h"
 
-#include <stddef.h>
-#include <stdlib.h>
-#include <stdlib.h>
+/**
+ * [0-8]	button_manual: turn * 2, rotate * 2, move * 4, stop * 1
+ * [9-24]	button_map: 16 * grids for setting waypoints/obstacles/start/end
+ */
+button_area button_manual[9], button_map[16], button_clear, button_go, button_mode;
 
-extern float speed_x, speed_y;
-extern float total_x, end_position;
+uint8_t start = 0xff, end = 0xff;
 
-void insert_lt(list_t *p, void *o){
-    if(p==NULL){
-        return;
+/**
+ * @brief bitmap of obstacles, 1 means obstacle, 0 means no obstacle
+ *
+ */
+uint16_t obstacles = 0x0000;
+
+uint8_t waypoint_state;
+uint8_t waypoint_list[100];
+uint8_t waypoint_cnt = 0;
+
+uint8_t LeiJun_mode;
+
+uint8_t whereami = 0, face_direction = 0, is_race = 0, is_running = 0, is_setting_start = 1;
+
+uint16_t which_button_pressed_manual(_m_tp_dev *p)
+{
+    uint16_t result = 0x0000;
+    if (p->sta & TP_PRES_DOWN) {
+        for (uint8_t i = 0; i < 9; i++) {
+            if (WITHIN_BUTTON(p->x[0], p->y[0], button_manual[i])) {
+                result |= 1 << i;
+            }
+        }
     }
-    list_t *pp = p->next;
-    p->next = (list_t*)malloc(sizeof(list_t));
-    p->next->data = o;
-    p->next->next = pp;
+    return result;
 }
 
-void free_obj(myobj_t *p){
-    if(p == NULL) return;
-    free(p->data);
-    free(p);
-}
-void free_lt(list_t *p){
-    if (p == NULL) return;
-    free_obj(p->data);
-    free_lt(p->next);
-    free(p);
-}
-void remove_lt(list_t *p){
-    if(p == NULL) return;
-    if(p->next == NULL) return;
-    list_t *pp = p->next->next;
-    p->next->next = NULL;
-    free_lt(p->next);
-    p->next = pp;
-}
-
-const img_t *get_obj_img(const myobj_t* o){
-    return &(o->data);
-}
-
-myobj_t* new_myobj(uint16_t x, uint16_t y, object_type_t ot){
-    myobj_t *p = (myobj_t*)malloc(sizeof(myobj_t));
-    p->type = ot;
-    p->x = x;
-    p->y = y;
-    if (ot == OBSTACLE){
-        p->data = (img_t*)malloc(sizeof(img_t));
-        p->data->data = (uint16_t* ) obstacle_image;
-        p->data->img_x = p->data->img_y = 72;
-        p->data->scale = 1;
-    } else if (ot == BUTTON) {
-        p->data = (img_t*)malloc(sizeof(img_t));
-        p->data->scale = 1;
+uint16_t which_button_pressed_map(_m_tp_dev *p)
+{
+    uint16_t result = 0x0000;
+    if (p->sta & TP_PRES_DOWN) {
+        for (uint8_t i = 0; i < 16; i++) {
+            if (WITHIN_BUTTON(p->x[0], p->y[0], button_map[i])) {
+                result |= 1 << i;
+            }
+        }
     }
-    return p;
+    return result;
+}
+
+void reset_states()
+{
+    start = 0xff;
+    end = 0xff;
+    obstacles = 0x0000;
+    waypoint_state = 0;
+    waypoint_cnt = 0;
+    whereami = 0;
+    face_direction = 0;
+    is_running = is_race = 0;
+    is_setting_start = 1;
 }

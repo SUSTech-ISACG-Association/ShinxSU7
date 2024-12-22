@@ -1,7 +1,7 @@
 #include "24cxx.h"
 #include "delay.h"
-#include "sys.h"
 #include "myiic.h"
+#include "sys.h"
 
 void AT24CXX_Init(void) { IIC_Init(); }
 
@@ -15,7 +15,7 @@ uint8_t AT24CXX_ReadOneByte(uint16_t ReadAddr)
         IIC_Send_Byte(ReadAddr >> 8);
     }
     else {
-        IIC_Send_Byte(0XA0 + ((ReadAddr / 256) << 1));
+        IIC_Send_Byte(0XA0 + ((ReadAddr >> 8) << 1));
     }
     IIC_Wait_Ack();
     IIC_Send_Byte(ReadAddr % 256);
@@ -37,7 +37,7 @@ void AT24CXX_WriteOneByte(uint16_t WriteAddr, uint8_t DataToWrite)
         IIC_Send_Byte(WriteAddr >> 8);
     }
     else
-        IIC_Send_Byte(0XA0 + ((WriteAddr / 256) << 1));
+        IIC_Send_Byte(0XA0 + ((WriteAddr >> 8) << 1));
     IIC_Wait_Ack();
     IIC_Send_Byte(WriteAddr % 256);
     IIC_Wait_Ack();
@@ -51,7 +51,7 @@ void AT24CXX_WriteLenByte(uint16_t WriteAddr, uint32_t DataToWrite, uint8_t Len)
 {
     uint8_t t;
     for (t = 0; t < Len; t++) {
-        AT24CXX_WriteOneByte(WriteAddr + t, (DataToWrite >> (8 * t)) & 0xff);
+        AT24CXX_WriteOneByte(WriteAddr + t, (DataToWrite >> (t << 3)) & 0xff);
     }
 }
 
