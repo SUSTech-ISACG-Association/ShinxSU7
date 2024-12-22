@@ -30,6 +30,7 @@ Control Code sent by LeiJun, ACK1/2 sent by SU7, DATA can be sent by both.
 | 0x30         | Set auto avoid mode position | 2byte                  |
 | 0x80         | Get obstacle distance        | 4byte                  |
 | 0x81         | Get obstacle position        | 1byte                  |
+| 0x90         | Get SU7 position             | 1byte(2bit 0, 2bit heading | 4bit position) |
 | 0x9x         | Get SU7 state                | Reserved               |
 
 ACK Code:
