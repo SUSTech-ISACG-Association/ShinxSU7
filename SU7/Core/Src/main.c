@@ -168,7 +168,7 @@ int main(void)
           ++wayi;
         }
       } else if (su7mode == AUTO_AVOID_MODE) {
-        autoavoid_update();
+        autopilot_update();
       } else if (su7mode == AUTO_RACE_MODE) {
         autorace_update();
       }

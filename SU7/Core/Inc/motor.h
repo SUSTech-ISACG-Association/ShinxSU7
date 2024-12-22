@@ -5,7 +5,7 @@
 
 extern TIM_HandleTypeDef htim4;
 
-#define MotorCalibrationCoeff 0.95
+#define MotorCalibrationCoeff 0.94
 
 #define __SetMotorSpeed(__CHANNEL__, __PORT__, __PIN__, __speed__)                                                     \
     do {                                                                                                               \

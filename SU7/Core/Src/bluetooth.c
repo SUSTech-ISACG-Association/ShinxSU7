@@ -116,7 +116,7 @@ void bluetooth_RxCallback()
         HAL_UART_Receive(huart, (uint8_t *)&proto_buffer, 2, 0xffff);
         uint8_t st = *((uint8_t *)(&proto_buffer));
         uint8_t en = *((uint8_t *)(&proto_buffer)+1);
-        set_autovoid_position((Waypoint){st & 0x3, st >> 2}, (Waypoint){en & 0x3, en >> 2});
+        set_autopilot_position((Waypoint){st & 0x3, st >> 2}, (Waypoint){en & 0x3, en >> 2});
         bluetooth_sendACK2(0x00);
         start_bluetooth_IT();
         break;

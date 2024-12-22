@@ -21,8 +21,9 @@
 // #define ROT_1d_TIME (TIME_SCALE_SPD_90 * 4.25)    // 1530/360
 // #define GO_1block_TIME (TIME_SCALE_SPD_90 * 1700) // 80cm: 1.7s
 // #define GO_12cm_TIME (TIME_SCALE_SPD_90 * 255)    // half length of su7
-#define ROT_1d_TIME 4.15f    // 1530/360
-#define GO_1block_TIME 1500 // 80cm: 1.5s
+// #define ROT_1d_TIME 4.20f // 1530/360 - 7.8V-
+#define ROT_1d_TIME 4.15f    // 1530/360 - 7.8V+
+#define GO_1block_TIME 1700 // 80cm: 1.5s
 #define GO_12cm_TIME 255    // half length of su7
 
 #define SCENE_COORDS_MAX_Y 4

@@ -1,4 +1,5 @@
 #include "control.h"
+#include "delay.h"
 #include "led.h"
 #include "limits.h"
 #include "math.h"
@@ -6,7 +7,6 @@
 #include "motor.h"
 #include "scene.h"
 #include "sonic.h"
-#include "delay.h"
 
 SU7State_t su7state = {{0, 0}, 0};
 static int32_t dirx[4] = {0, 1, 0, -1};
@@ -45,19 +45,23 @@ static inline uint8_t calibrateReadSearchState()
 }
 
 #define CALIB_STEP_DELAY_MS 100
-#define CALIB_FUNC_OPS_DELAY_MS 10
 #define CALIB_TIME_DECAY_COEFF 0.75f
 #define CALIB_RETREAT_MIN_TIME 100
 #define CALIB_SPIN_MIN_TIME 80
 #define CALIB_INIT_HBLK_TIME 850
-#define CALIB_ROT_OFFSET 3.114514e-3
-#define CALIB_FLOAT_EPS 1e-4
+#define CALIB_HBLK_ENTER_OFFSET 185
+#define CALIB_ROT_OFFSET 1.14514e-4
+#define CALIB_ROT_FLOAT_EPS 1e-4
+#define CALIB_FUNC_OPS_DELAY_MS 10
 
 // Calibrated half-block time
 uint32_t calibratedHBlkTime = CALIB_INIT_HBLK_TIME;
 // Calibrated 90-degree rotation time
-float calibrated90DegRotTime = ROT_1d_TIME;
+float calibrated1DegRotTime = ROT_1d_TIME;
 float calibrateLastSpinDeg = 0.0f;
+// To prevent multiple rotations on the same spot causes
+// inaccurate calibration
+uint8_t calibrateHasSteppedForward = 0;
 
 // extern uint32_t ctEnEl;
 // extern uint32_t ctExEl;
@@ -74,13 +78,14 @@ void calibrateOneStepForward()
 
     // First set to forward and record the startTick of forward
     // which will later be used to calibrate the speed
-    MOTOR_FORWARD(max_spd);
-    LED0_Write(0);
-    LED1_Write(0);
     uint32_t enterStartTick = HAL_GetTick();
     uint32_t enterEndTick = UINT32_MAX;
     uint32_t exitStartTick = 0;
     uint32_t exitEndTick = UINT32_MAX;
+
+    LED0_Write(0);
+    LED1_Write(0);
+    MOTOR_FORWARD(max_spd);
 
     // Set to 1 if spinned to left, 2 if to right
     // Used to calibrate rotation
@@ -91,10 +96,6 @@ void calibrateOneStepForward()
     while (state != CalibState_Complete) {
         // HAL_Delay(5);
         uint8_t searchState = calibrateReadSearchState();
-
-        if (searchState != 0b000 && enterEndTick == UINT32_MAX) {
-            enterEndTick = HAL_GetTick();
-        }
 
         switch (searchState) {
         case 0b000:
@@ -126,6 +127,7 @@ void calibrateOneStepForward()
         }
 
         if (state == CalibState_Exiting && exitStartTick == 0) {
+            enterEndTick = HAL_GetTick() + CALIB_HBLK_ENTER_OFFSET;
             exitStartTick = HAL_GetTick();
         }
 
@@ -142,31 +144,16 @@ void calibrateOneStepForward()
             break;
         case CalibState_Exiting:
             exitEndTick = HAL_GetTick();
-            if (calibratedHBlkTime != 0) {
-                if (exitEndTick - exitStartTick > calibratedHBlkTime) {
-                    state = CalibState_Complete;
-                    MOTOR_STOP();
-                    // LED0_Write(1);
-                    // LED1_Write(1);
-                }
-                else {
-                    MOTOR_FORWARD(max_spd);
-                    // LED0_Write(0);
-                    // LED1_Write(1);
-                }
+            if (exitEndTick - exitStartTick > calibratedHBlkTime) {
+                state = CalibState_Complete;
+                MOTOR_STOP();
+                // LED0_Write(1);
+                // LED1_Write(1);
             }
             else {
-                if (exitEndTick - exitStartTick > enterEndTick - enterStartTick) {
-                    state = CalibState_Complete;
-                    MOTOR_STOP();
-                    // LED0_Write(1);
-                    // LED1_Write(1);
-                }
-                else {
-                    MOTOR_FORWARD(max_spd);
-                    // LED0_Write(0);
-                    // LED1_Write(1);
-                }
+                MOTOR_FORWARD(max_spd);
+                // LED0_Write(0);
+                // LED1_Write(1);
             }
             break;
         case CalibState_SpinL:
@@ -198,13 +185,12 @@ void calibrateOneStepForward()
             break;
         }
     }
+
+#ifdef CALIBRATE_ENABLE
     // Update current half-block-required time based on #ticks elapsed on entering
     uint32_t tickElapsed = enterEndTick - enterStartTick;
-    if (calibratedHBlkTime == 0)
-        calibratedHBlkTime = tickElapsed;
-    else
-        calibratedHBlkTime =
-            (uint32_t)(tickElapsed * (1 - CALIB_TIME_DECAY_COEFF) + calibratedHBlkTime * CALIB_TIME_DECAY_COEFF);
+    calibratedHBlkTime =
+        (uint32_t)(tickElapsed * (1 - CALIB_TIME_DECAY_COEFF) + calibratedHBlkTime * CALIB_TIME_DECAY_COEFF);
 
     // uint32_t enterTickElapsed = enterEndTick - enterStartTick;
     // uint32_t exitTickElapsed = exitEndTick - exitStartTick;
@@ -212,12 +198,17 @@ void calibrateOneStepForward()
     // append_my_message(0x82, (uint8_t *)&exitTickElapsed, sizeof(uint32_t));
     // ctEnEl = enterTickElapsed;
     // ctExEl = exitTickElapsed;
-    if (fabsf(calibrateLastSpinDeg) > CALIB_FLOAT_EPS && firstSpin != 0) {
+    if (fabsf(calibrateLastSpinDeg) > CALIB_ROT_FLOAT_EPS && firstSpin != 0) {
         // Calibrate rotation
         float sgn = firstSpin == 1 ? -1.0f : 1.0f;
-        float newC90DegRotTime = calibrated90DegRotTime + sgn * calibrateLastSpinDeg / 90.0f * CALIB_ROT_OFFSET;
-        calibrated90DegRotTime = newC90DegRotTime;
+        float newC90DegRotTime = calibrated1DegRotTime + sgn * calibrateLastSpinDeg * CALIB_ROT_OFFSET;
+        calibrated1DegRotTime = newC90DegRotTime;
+
+        // Reset calibrateLastSpinDeg
+        calibrateLastSpinDeg = 0.0f;
     }
+    calibrateHasSteppedForward = 1;
+#endif
 }
 
 void calibrateAndRotDir(const direction_t dir)
@@ -228,14 +219,20 @@ void calibrateAndRotDir(const direction_t dir)
         deg -= 360;
     else if (deg < -180)
         deg += 360;
-    calibrateLastSpinDeg = deg;
+    if (calibrateHasSteppedForward == 0) {
+        calibrateLastSpinDeg += deg;
+    }
+    else {
+        calibrateLastSpinDeg = deg;
+        calibrateHasSteppedForward = 0;
+    }
     if (deg < 0) {
         MOTOR_SPINL(max_spd);
-        HAL_Delay(calibrated90DegRotTime * (-deg));
+        HAL_Delay(calibrated1DegRotTime * (-deg));
     }
     else {
         MOTOR_SPINR(max_spd);
-        HAL_Delay(calibrated90DegRotTime * deg);
+        HAL_Delay(calibrated1DegRotTime * deg);
     }
     MOTOR_STOP();
     su7state.heading = dir;
@@ -259,19 +256,32 @@ void runInitialCalibration()
     HAL_Delay(150);
     LED0_Write(0);
     LED1_Write(0);
+
+    // !2x2 calibration
+    while (1) {
+        calibrateAndGoDir(Y_POSITIVE);
+        calibrateAndGoDir(X_POSITIVE);
+        calibrateAndGoDir(Y_POSITIVE);
+        calibrateAndGoDir(X_NEGATIVE);
+        calibrateAndGoDir(Y_NEGATIVE);
+        calibrateAndGoDir(X_POSITIVE);
+        calibrateAndGoDir(Y_NEGATIVE);
+        calibrateAndGoDir(X_NEGATIVE);
+    }
+
     // !3x3 calibration
-    // calibrateAndGoDir(X_POSITIVE);
-    // calibrateAndGoDir(X_POSITIVE);
-    // calibrateAndGoDir(Y_POSITIVE);
-    // calibrateAndGoDir(X_NEGATIVE);
-    // calibrateAndGoDir(X_NEGATIVE);
-    // calibrateAndGoDir(Y_POSITIVE);
-    // calibrateAndGoDir(X_POSITIVE);
-    // calibrateAndGoDir(X_POSITIVE);
-    // calibrateAndGoDir(X_NEGATIVE);
-    // calibrateAndGoDir(X_NEGATIVE);
-    // calibrateAndGoDir(Y_NEGATIVE);
-    // calibrateAndGoDir(Y_NEGATIVE);
+    calibrateAndGoDir(X_POSITIVE);
+    calibrateAndGoDir(X_POSITIVE);
+    calibrateAndGoDir(Y_POSITIVE);
+    calibrateAndGoDir(X_NEGATIVE);
+    calibrateAndGoDir(X_NEGATIVE);
+    calibrateAndGoDir(Y_POSITIVE);
+    calibrateAndGoDir(X_POSITIVE);
+    calibrateAndGoDir(X_POSITIVE);
+    calibrateAndGoDir(X_NEGATIVE);
+    calibrateAndGoDir(X_NEGATIVE);
+    calibrateAndGoDir(Y_NEGATIVE);
+    calibrateAndGoDir(Y_NEGATIVE);
 
     // !4x4 calibration
     calibrateAndGoDir(Y_POSITIVE);
@@ -311,6 +321,7 @@ void runInitialCalibration()
     calibrateAndGoDir(X_NEGATIVE);
     HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
     calibrateAndRotDir(Y_NEGATIVE);
+
     LED0_Write(1);
     LED1_Write(1);
     HAL_Delay(150);
@@ -332,7 +343,7 @@ void runInitialCalibration()
 
 // ============= END OF BASIC UTILITIES ===============
 
-static Waypoint autoavoid_start, autoavoid_end;
+static Waypoint autopilot_start, autopilot_end;
 static const uint32_t es_len = SCENE_COORDS_MAX_X * SCENE_COORDS_MAX_Y * 4;
 static Waypoint explore_stack[SCENE_COORDS_MAX_X * SCENE_COORDS_MAX_Y * 4];
 static uint32_t es_head;
@@ -368,10 +379,10 @@ uint8_t es_pop()
     }
 }
 
-void set_autovoid_position(const Waypoint st, const Waypoint en)
+void set_autopilot_position(const Waypoint st, const Waypoint en)
 {
-    autoavoid_start = st;
-    autoavoid_end = en;
+    autopilot_start = st;
+    autopilot_end = en;
     Scene_set_object(&ShinxScene1, st.x, st.y, SO_Source);
     Scene_set_object(&ShinxScene1, en.x, en.y, SO_Destination);
     es_head = 0;
@@ -393,7 +404,8 @@ uint8_t check_valid_neq(const Waypoint pos, const SceneObject so)
     return Scene_get_object(&ShinxScene1, pos.x, pos.y) != so;
 }
 
-void save_su7_position(){
+void save_su7_position()
+{
     uint8_t pp = (su7state.heading << 4) | (su7state.pos.y << 2) | (su7state.pos.x);
     append_my_message(0x90, &pp, 1);
 }
@@ -539,13 +551,14 @@ uint8_t explore_dir(const direction_t dir)
     }
 }
 
-void add_obstacle(const Waypoint nx) {
+void add_obstacle(const Waypoint nx)
+{
     Scene_set_object(&ShinxScene1, nx.x, nx.y, SO_Obstacle);
     uint8_t nn = nx.y * 4 + nx.x;
     append_my_message(0x81, &nn, 1);
 }
 
-void autoavoid_update()
+void autopilot_update()
 {
     Waypoint nx;
     for (uint32_t i = 0; i < ld; ++i) {
@@ -569,12 +582,12 @@ void autoavoid_update()
             else {
                 Scene_set_object(&ShinxScene1, nx.x, nx.y, SO_Empty);
                 es_push(nx);
-                if (dis < SQUARE_LENGTH_CM * 2.5) {
-                    nx= (Waypoint){nx.x + dirx[i], nx.y + diry[i]};
-                    if (check_valid_eq(nx, SO_Unknown)){
-                        add_obstacle(nx);
-                    }
-                } // TODO: an optimization
+                // if (dis < SQUARE_LENGTH_CM * 2.5) {
+                //     nx = (Waypoint){nx.x + dirx[i], nx.y + diry[i]};
+                //     if (check_valid_eq(nx, SO_Unknown)) {
+                //         add_obstacle(nx);
+                //     }
+                // } // TODO: an optimization
                 // calibrateAndGoDir(i);
             }
 #endif
@@ -596,7 +609,7 @@ void autoavoid_update()
         }
     }
     if (es_head == 0) {
-        safe_goto(autoavoid_end);
+        safe_goto(autopilot_end);
         end_mode();
         return;
     }
@@ -678,8 +691,8 @@ void control_init()
     for(int32_t i = 0; i < SCENE_COORDS_MAX_X; ++i)
         for(int32_t j = 0; j < SCENE_COORDS_MAX_Y; ++j)
             Scene_set_object(&ShinxScene1, i, j, SO_Unknown);
-    Scene_set_object(&ShinxScene1, autoavoid_start.x, autoavoid_start.y, SO_Source);
-    Scene_set_object(&ShinxScene1, autoavoid_end.x, autoavoid_end.y, SO_Destination);
+    Scene_set_object(&ShinxScene1, autopilot_start.x, autopilot_start.y, SO_Source);
+    Scene_set_object(&ShinxScene1, autopilot_end.x, autopilot_end.y, SO_Destination);
     race_state = FOLLOWING;
     es_head = 0;
 }
