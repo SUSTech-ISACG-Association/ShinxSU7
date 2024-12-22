@@ -59,7 +59,7 @@ void bluetooth_RxCallback()
         start_bluetooth_IT();
         break;
     case 0x03:
-        bluetooth_sendACK2(set_auto_avoid_mode());
+        bluetooth_sendACK2(set_autopilot_mode());
         start_bluetooth_IT();
         break;
     case 0x04:

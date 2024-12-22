@@ -167,7 +167,7 @@ int main(void)
           calibrateAndGoDir(dir);
           ++wayi;
         }
-      } else if (su7mode == AUTO_AVOID_MODE) {
+      } else if (su7mode == AUTOPILOT_MODE) {
         autopilot_update();
       } else if (su7mode == AUTO_RACE_MODE) {
         autorace_update();
@@ -614,11 +614,11 @@ uint8_t set_waypoint_mode(){
     return 0x00;
   }
 }
-uint8_t set_auto_avoid_mode(){
+uint8_t set_autopilot_mode(){
   if (SU7Running) {
     return 0xf1;
   } else {
-    su7mode = AUTO_AVOID_MODE;
+    su7mode = AUTOPILOT_MODE;
     return 0x00;
   }
 }

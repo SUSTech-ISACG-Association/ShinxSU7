@@ -44,15 +44,17 @@ static inline uint8_t calibrateReadSearchState()
     return s1 & s2 & s3;
 }
 
-#define CALIB_STEP_DELAY_MS 100
+#define CALIB_STEP_DELAY_MS 300
 #define CALIB_TIME_DECAY_COEFF 0.75f
 #define CALIB_RETREAT_MIN_TIME 100
 #define CALIB_SPIN_MIN_TIME 80
 #define CALIB_INIT_HBLK_TIME 850
-#define CALIB_HBLK_ENTER_OFFSET 185
-#define CALIB_ROT_OFFSET 1.14514e-4
-#define CALIB_ROT_FLOAT_EPS 1e-4
+#define CALIB_HBLK_ENTER_OFFSET 175
+#define CALIB_ROT_OFFSET 1.00e-4f
+#define CALIB_ROT_FLOAT_EPS 1e-4f
+#define CALIB_CONSECUTIVE_CHANGE_DECAY 0.75f
 #define CALIB_FUNC_OPS_DELAY_MS 10
+#define CALIB_FUNC_LOOP_CNT 2
 
 // Calibrated half-block time
 uint32_t calibratedHBlkTime = CALIB_INIT_HBLK_TIME;
@@ -62,6 +64,7 @@ float calibrateLastSpinDeg = 0.0f;
 // To prevent multiple rotations on the same spot causes
 // inaccurate calibration
 uint8_t calibrateHasSteppedForward = 0;
+int8_t lastSpinOri = 0; // Last spin orientation
 
 // extern uint32_t ctEnEl;
 // extern uint32_t ctExEl;
@@ -89,7 +92,7 @@ void calibrateOneStepForward()
 
     // Set to 1 if spinned to left, 2 if to right
     // Used to calibrate rotation
-    uint8_t firstSpin = 0;
+    int8_t firstSpin = 0;
 
     CalibState_t state = CalibState_Entering;
 
@@ -200,8 +203,12 @@ void calibrateOneStepForward()
     // ctExEl = exitTickElapsed;
     if (fabsf(calibrateLastSpinDeg) > CALIB_ROT_FLOAT_EPS && firstSpin != 0) {
         // Calibrate rotation
-        float sgn = firstSpin == 1 ? -1.0f : 1.0f;
-        float newC90DegRotTime = calibrated1DegRotTime + sgn * calibrateLastSpinDeg * CALIB_ROT_OFFSET;
+        int8_t sgn = firstSpin == 1 ? -1 : 1;
+        int8_t rotOffsetSgn = sgn * (calibrateLastSpinDeg > 0.0f ? 1 : -1);
+        float consecutiveChangeDecay = (rotOffsetSgn == lastSpinOri) ? 1.0f : CALIB_CONSECUTIVE_CHANGE_DECAY;
+        lastSpinOri = rotOffsetSgn;
+
+        float newC90DegRotTime = calibrated1DegRotTime + sgn * calibrateLastSpinDeg * CALIB_ROT_OFFSET * consecutiveChangeDecay;
         calibrated1DegRotTime = newC90DegRotTime;
 
         // Reset calibrateLastSpinDeg
@@ -258,7 +265,7 @@ void runInitialCalibration()
     LED1_Write(0);
 
     // !2x2 calibration
-    while (1) {
+    for (int32_t i = 0; i < CALIB_FUNC_LOOP_CNT; ++i) {
         calibrateAndGoDir(Y_POSITIVE);
         calibrateAndGoDir(X_POSITIVE);
         calibrateAndGoDir(Y_POSITIVE);
@@ -270,57 +277,57 @@ void runInitialCalibration()
     }
 
     // !3x3 calibration
-    calibrateAndGoDir(X_POSITIVE);
-    calibrateAndGoDir(X_POSITIVE);
-    calibrateAndGoDir(Y_POSITIVE);
-    calibrateAndGoDir(X_NEGATIVE);
-    calibrateAndGoDir(X_NEGATIVE);
-    calibrateAndGoDir(Y_POSITIVE);
-    calibrateAndGoDir(X_POSITIVE);
-    calibrateAndGoDir(X_POSITIVE);
-    calibrateAndGoDir(X_NEGATIVE);
-    calibrateAndGoDir(X_NEGATIVE);
-    calibrateAndGoDir(Y_NEGATIVE);
-    calibrateAndGoDir(Y_NEGATIVE);
+    // calibrateAndGoDir(X_POSITIVE);
+    // calibrateAndGoDir(X_POSITIVE);
+    // calibrateAndGoDir(Y_POSITIVE);
+    // calibrateAndGoDir(X_NEGATIVE);
+    // calibrateAndGoDir(X_NEGATIVE);
+    // calibrateAndGoDir(Y_POSITIVE);
+    // calibrateAndGoDir(X_POSITIVE);
+    // calibrateAndGoDir(X_POSITIVE);
+    // calibrateAndGoDir(X_NEGATIVE);
+    // calibrateAndGoDir(X_NEGATIVE);
+    // calibrateAndGoDir(Y_NEGATIVE);
+    // calibrateAndGoDir(Y_NEGATIVE);
 
     // !4x4 calibration
-    calibrateAndGoDir(Y_POSITIVE);
-    HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
-    calibrateAndGoDir(Y_POSITIVE);
-    HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
-    calibrateAndGoDir(Y_POSITIVE);
-    HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
-    calibrateAndGoDir(X_POSITIVE);
-    HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
-    calibrateAndGoDir(X_POSITIVE);
-    HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
-    calibrateAndGoDir(X_POSITIVE);
-    HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
-    calibrateAndGoDir(Y_NEGATIVE);
-    HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
-    calibrateAndGoDir(X_NEGATIVE);
-    HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
-    calibrateAndGoDir(X_NEGATIVE);
-    HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
-    calibrateAndGoDir(X_NEGATIVE);
-    HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
-    calibrateAndGoDir(Y_NEGATIVE);
-    HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
-    calibrateAndGoDir(X_POSITIVE);
-    HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
-    calibrateAndGoDir(X_POSITIVE);
-    HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
-    calibrateAndGoDir(X_POSITIVE);
-    HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
-    calibrateAndGoDir(Y_NEGATIVE);
-    HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
-    calibrateAndGoDir(X_NEGATIVE);
-    HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
-    calibrateAndGoDir(X_NEGATIVE);
-    HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
-    calibrateAndGoDir(X_NEGATIVE);
-    HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
-    calibrateAndRotDir(Y_NEGATIVE);
+    // calibrateAndGoDir(Y_POSITIVE);
+    // HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
+    // calibrateAndGoDir(Y_POSITIVE);
+    // HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
+    // calibrateAndGoDir(Y_POSITIVE);
+    // HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
+    // calibrateAndGoDir(X_POSITIVE);
+    // HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
+    // calibrateAndGoDir(X_POSITIVE);
+    // HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
+    // calibrateAndGoDir(X_POSITIVE);
+    // HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
+    // calibrateAndGoDir(Y_NEGATIVE);
+    // HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
+    // calibrateAndGoDir(X_NEGATIVE);
+    // HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
+    // calibrateAndGoDir(X_NEGATIVE);
+    // HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
+    // calibrateAndGoDir(X_NEGATIVE);
+    // HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
+    // calibrateAndGoDir(Y_NEGATIVE);
+    // HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
+    // calibrateAndGoDir(X_POSITIVE);
+    // HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
+    // calibrateAndGoDir(X_POSITIVE);
+    // HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
+    // calibrateAndGoDir(X_POSITIVE);
+    // HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
+    // calibrateAndGoDir(Y_NEGATIVE);
+    // HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
+    // calibrateAndGoDir(X_NEGATIVE);
+    // HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
+    // calibrateAndGoDir(X_NEGATIVE);
+    // HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
+    // calibrateAndGoDir(X_NEGATIVE);
+    // HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
+    // calibrateAndRotDir(Y_NEGATIVE);
 
     LED0_Write(1);
     LED1_Write(1);
@@ -386,7 +393,7 @@ void set_autopilot_position(const Waypoint st, const Waypoint en)
     Scene_set_object(&ShinxScene1, st.x, st.y, SO_Source);
     Scene_set_object(&ShinxScene1, en.x, en.y, SO_Destination);
     es_head = 0;
-    su7state = (SU7State_t){st, 0};
+    su7state = (SU7State_t){st, Y_NEGATIVE};
 }
 
 uint8_t check_valid_eq(const Waypoint pos, const SceneObject so)

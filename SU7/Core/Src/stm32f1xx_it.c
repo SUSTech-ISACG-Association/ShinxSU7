@@ -299,7 +299,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
     HAL_Delay(50);
     if(HAL_GPIO_ReadPin(KEY1_GPIO_Port, KEY1_Pin) == GPIO_PIN_RESET){
       set_autopilot_position((Waypoint){0, 0}, (Waypoint){3, 3});
-      set_auto_avoid_mode();
+      set_autopilot_mode();
       toggle_mode();
     }
     while(HAL_GPIO_ReadPin(KEY1_GPIO_Port, KEY1_Pin) == GPIO_PIN_RESET)
