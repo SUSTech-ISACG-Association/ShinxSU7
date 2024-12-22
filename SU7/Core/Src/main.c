@@ -173,7 +173,7 @@ int main(void)
         autorace_update();
       }
     }
-    else
+    else if (su7mode != CONTROL_MODE)
     {
       MOTOR_STOP();
     }

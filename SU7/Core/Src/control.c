@@ -364,6 +364,8 @@ void safe_goto(const Waypoint en)
     }
     else if (dx + dy == 1) {
         calibrateAndGoDir(GetDirection(su7state.pos, en));
+        uint8_t pp = (su7state.heading << 4) | (su7state.pos.y << 2) | (su7state.pos.x);
+        append_my_message(0x91, &pp, 1);
         return;
     }
     else {
@@ -381,6 +383,8 @@ void safe_goto(const Waypoint en)
                 while (su7state.pos.x != en.x || su7state.pos.y != en.y) {
                     calibrateAndGoDir(nxt[su7state.pos.x][su7state.pos.y]);
                 }
+                uint8_t pp = (su7state.heading << 4) | (su7state.pos.y << 2) | (su7state.pos.x);
+                append_my_message(0x91, &pp, 1);
                 return;
             }
             eq_head = (eq_head + 1) % es_len;
