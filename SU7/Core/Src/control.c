@@ -47,7 +47,7 @@ static inline uint8_t calibrateReadSearchState()
 #define CALIB_RETREAT_MIN_TIME 100
 #define CALIB_SPIN_MIN_TIME 90
 #define CALIB_INIT_HBLK_TIME 850
-#define CALIB_ROT_OFFSET 5e-4
+#define CALIB_ROT_OFFSET 5e-3
 #define CALIB_FLOAT_EPS 1e-4
 
 // Calibrated half-block time
@@ -208,11 +208,11 @@ void calibrateOneStepForward()
     // append_my_message(0x82, (uint8_t *)&exitTickElapsed, sizeof(uint32_t));
     // ctEnEl = enterTickElapsed;
     // ctExEl = exitTickElapsed;
-    if (fabsf(calibrateLastSpinDeg) < CALIB_FLOAT_EPS && firstSpin != 0) {
+    if (fabsf(calibrateLastSpinDeg) > CALIB_FLOAT_EPS && firstSpin != 0) {
         // Calibrate rotation
         float sgn = firstSpin == 1 ? -1.0f : 1.0f;
         float newC90DegRotTime = calibrated90DegRotTime + sgn * (calibrateLastSpinDeg / 90.0f) * CALIB_ROT_OFFSET;
-        calibrated90DegRotTime = newC90DegRotTime; 
+        calibrated90DegRotTime = newC90DegRotTime;
     }
 }
 

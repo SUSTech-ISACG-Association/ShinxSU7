@@ -129,8 +129,8 @@ void bluetooth_RxCallback()
             remove_last_find_message();
         }
         else {
-            float dis = SonicDetect(90); // sonic priority: 0, UART priority: 1
-            HAL_UART_Transmit(huart, (uint8_t *)&dis, sizeof(dis), 0xffff);
+            float dis = FastSonicDetect(1, 1000); // sonic priority: 0, UART priority: 1
+            HAL_UART_Transmit(huart, (uint8_t *)&dis, sizeof(float), 0xffff);
         }
         bluetooth_sendACK2(0x00);
         start_bluetooth_IT();

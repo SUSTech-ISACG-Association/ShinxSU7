@@ -3,6 +3,8 @@
 
 #include "main.h"
 
+#define SONIC_MIN_INTERVAL_MS 20
+
 float SonicDetect(float angle);
 
 #define SonicDetectF() SonicDetect(90)
