@@ -6,6 +6,7 @@
 #include "motor.h"
 #include "scene.h"
 #include "sonic.h"
+#include "delay.h"
 
 SU7State_t su7state = {{0, 0}, 0};
 static int32_t dirx[4] = {0, 1, 0, -1};
@@ -36,18 +37,19 @@ static inline uint8_t __calibReadSearchStateOnce()
 static inline uint8_t calibrateReadSearchState()
 {
     uint8_t s1 = __calibReadSearchStateOnce();
-    HAL_Delay(1);
+    HAL_Delay_us(10);
     uint8_t s2 = __calibReadSearchStateOnce();
-    HAL_Delay(1);
+    HAL_Delay_us(20);
     uint8_t s3 = __calibReadSearchStateOnce();
     return s1 & s2 & s3;
 }
 
+#define CALIB_STEP_DELAY_MS 100
 #define CALIB_TIME_DECAY_COEFF 0.75f
 #define CALIB_RETREAT_MIN_TIME 100
-#define CALIB_SPIN_MIN_TIME 90
+#define CALIB_SPIN_MIN_TIME 80
 #define CALIB_INIT_HBLK_TIME 850
-#define CALIB_ROT_OFFSET 5e-3
+#define CALIB_ROT_OFFSET 3.114514e-3
 #define CALIB_FLOAT_EPS 1e-4
 
 // Calibrated half-block time
@@ -64,6 +66,7 @@ float calibrateLastSpinDeg = 0.0f;
 // relative to the borderline of the current square
 void calibrateOneStepForward()
 {
+    HAL_Delay(CALIB_STEP_DELAY_MS);
     // We make the assumption that the first time we
     // come across a border, our orientation must be
     // 90 degrees to that borderline
@@ -211,13 +214,14 @@ void calibrateOneStepForward()
     if (fabsf(calibrateLastSpinDeg) > CALIB_FLOAT_EPS && firstSpin != 0) {
         // Calibrate rotation
         float sgn = firstSpin == 1 ? -1.0f : 1.0f;
-        float newC90DegRotTime = calibrated90DegRotTime + sgn * (calibrateLastSpinDeg / 90.0f) * CALIB_ROT_OFFSET;
+        float newC90DegRotTime = calibrated90DegRotTime + sgn * calibrateLastSpinDeg / 90.0f * CALIB_ROT_OFFSET;
         calibrated90DegRotTime = newC90DegRotTime;
     }
 }
 
 void calibrateAndRotDir(const direction_t dir)
 {
+    HAL_Delay(CALIB_STEP_DELAY_MS);
     float deg = Direction2float(dir) - Direction2float(su7state.heading);
     if (deg > 180)
         deg -= 360;
@@ -254,18 +258,58 @@ void runInitialCalibration()
     HAL_Delay(150);
     LED0_Write(0);
     LED1_Write(0);
-    calibrateAndGoDir(X_POSITIVE);
-    calibrateAndGoDir(X_POSITIVE);
+    // !3x3 calibration
+    // calibrateAndGoDir(X_POSITIVE);
+    // calibrateAndGoDir(X_POSITIVE);
+    // calibrateAndGoDir(Y_POSITIVE);
+    // calibrateAndGoDir(X_NEGATIVE);
+    // calibrateAndGoDir(X_NEGATIVE);
+    // calibrateAndGoDir(Y_POSITIVE);
+    // calibrateAndGoDir(X_POSITIVE);
+    // calibrateAndGoDir(X_POSITIVE);
+    // calibrateAndGoDir(X_NEGATIVE);
+    // calibrateAndGoDir(X_NEGATIVE);
+    // calibrateAndGoDir(Y_NEGATIVE);
+    // calibrateAndGoDir(Y_NEGATIVE);
+
+    // !4x4 calibration
     calibrateAndGoDir(Y_POSITIVE);
-    calibrateAndGoDir(X_NEGATIVE);
-    calibrateAndGoDir(X_NEGATIVE);
+    HAL_Delay(300);
     calibrateAndGoDir(Y_POSITIVE);
+    HAL_Delay(300);
+    calibrateAndGoDir(Y_POSITIVE);
+    HAL_Delay(300);
     calibrateAndGoDir(X_POSITIVE);
+    HAL_Delay(300);
     calibrateAndGoDir(X_POSITIVE);
-    calibrateAndGoDir(X_NEGATIVE);
-    calibrateAndGoDir(X_NEGATIVE);
+    HAL_Delay(300);
+    calibrateAndGoDir(X_POSITIVE);
+    HAL_Delay(300);
     calibrateAndGoDir(Y_NEGATIVE);
+    HAL_Delay(300);
+    calibrateAndGoDir(X_NEGATIVE);
+    HAL_Delay(300);
+    calibrateAndGoDir(X_NEGATIVE);
+    HAL_Delay(300);
+    calibrateAndGoDir(X_NEGATIVE);
+    HAL_Delay(300);
     calibrateAndGoDir(Y_NEGATIVE);
+    HAL_Delay(300);
+    calibrateAndGoDir(X_POSITIVE);
+    HAL_Delay(300);
+    calibrateAndGoDir(X_POSITIVE);
+    HAL_Delay(300);
+    calibrateAndGoDir(X_POSITIVE);
+    HAL_Delay(300);
+    calibrateAndGoDir(Y_NEGATIVE);
+    HAL_Delay(300);
+    calibrateAndGoDir(X_NEGATIVE);
+    HAL_Delay(300);
+    calibrateAndGoDir(X_NEGATIVE);
+    HAL_Delay(300);
+    calibrateAndGoDir(X_NEGATIVE);
+    HAL_Delay(300);
+    calibrateAndRotDir(Y_NEGATIVE);
     LED0_Write(1);
     LED1_Write(1);
     HAL_Delay(150);
