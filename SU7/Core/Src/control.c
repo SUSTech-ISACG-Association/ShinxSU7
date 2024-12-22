@@ -45,6 +45,7 @@ static inline uint8_t calibrateReadSearchState()
 }
 
 #define CALIB_STEP_DELAY_MS 100
+#define CALIB_FUNC_OPS_DELAY_MS 10
 #define CALIB_TIME_DECAY_COEFF 0.75f
 #define CALIB_RETREAT_MIN_TIME 100
 #define CALIB_SPIN_MIN_TIME 80
@@ -274,41 +275,41 @@ void runInitialCalibration()
 
     // !4x4 calibration
     calibrateAndGoDir(Y_POSITIVE);
-    HAL_Delay(300);
+    HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
     calibrateAndGoDir(Y_POSITIVE);
-    HAL_Delay(300);
+    HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
     calibrateAndGoDir(Y_POSITIVE);
-    HAL_Delay(300);
+    HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
     calibrateAndGoDir(X_POSITIVE);
-    HAL_Delay(300);
+    HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
     calibrateAndGoDir(X_POSITIVE);
-    HAL_Delay(300);
+    HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
     calibrateAndGoDir(X_POSITIVE);
-    HAL_Delay(300);
+    HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
     calibrateAndGoDir(Y_NEGATIVE);
-    HAL_Delay(300);
+    HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
     calibrateAndGoDir(X_NEGATIVE);
-    HAL_Delay(300);
+    HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
     calibrateAndGoDir(X_NEGATIVE);
-    HAL_Delay(300);
+    HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
     calibrateAndGoDir(X_NEGATIVE);
-    HAL_Delay(300);
+    HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
     calibrateAndGoDir(Y_NEGATIVE);
-    HAL_Delay(300);
+    HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
     calibrateAndGoDir(X_POSITIVE);
-    HAL_Delay(300);
+    HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
     calibrateAndGoDir(X_POSITIVE);
-    HAL_Delay(300);
+    HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
     calibrateAndGoDir(X_POSITIVE);
-    HAL_Delay(300);
+    HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
     calibrateAndGoDir(Y_NEGATIVE);
-    HAL_Delay(300);
+    HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
     calibrateAndGoDir(X_NEGATIVE);
-    HAL_Delay(300);
+    HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
     calibrateAndGoDir(X_NEGATIVE);
-    HAL_Delay(300);
+    HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
     calibrateAndGoDir(X_NEGATIVE);
-    HAL_Delay(300);
+    HAL_Delay(CALIB_FUNC_OPS_DELAY_MS);
     calibrateAndRotDir(Y_NEGATIVE);
     LED0_Write(1);
     LED1_Write(1);
@@ -392,6 +393,11 @@ uint8_t check_valid_neq(const Waypoint pos, const SceneObject so)
     return Scene_get_object(&ShinxScene1, pos.x, pos.y) != so;
 }
 
+void save_su7_position(){
+    uint8_t pp = (su7state.heading << 4) | (su7state.pos.y << 2) | (su7state.pos.x);
+    append_my_message(0x90, &pp, 1);
+}
+
 void safe_goto(const Waypoint en)
 {
     static Waypoint explore_queue[SCENE_COORDS_MAX_X * SCENE_COORDS_MAX_Y * 4];
@@ -408,8 +414,7 @@ void safe_goto(const Waypoint en)
     }
     else if (dx + dy == 1) {
         calibrateAndGoDir(GetDirection(su7state.pos, en));
-        uint8_t pp = (su7state.heading << 4) | (su7state.pos.y << 2) | (su7state.pos.x);
-        append_my_message(0x91, &pp, 1);
+        save_su7_position();
         return;
     }
     else {
@@ -426,9 +431,8 @@ void safe_goto(const Waypoint en)
             if (nx.x == su7state.pos.x && nx.y == su7state.pos.y) {
                 while (su7state.pos.x != en.x || su7state.pos.y != en.y) {
                     calibrateAndGoDir(nxt[su7state.pos.x][su7state.pos.y]);
+                    save_su7_position();
                 }
-                uint8_t pp = (su7state.heading << 4) | (su7state.pos.y << 2) | (su7state.pos.x);
-                append_my_message(0x91, &pp, 1);
                 return;
             }
             eq_head = (eq_head + 1) % es_len;
@@ -443,7 +447,7 @@ void safe_goto(const Waypoint en)
             }
         }
     }
-
+    // warning: no path can be found
     LED0_Write(0);
     LED1_Write(0);
     HAL_Delay(200);
@@ -508,8 +512,13 @@ uint8_t explore_dir(const direction_t dir)
         }
         // Ultrasonic obstruction test
         if (wait - (HAL_GetTick() - tickStart) > 250) {
+#ifdef SONIC_NOT_WORKING
             float dis = FastSonicDetect(2, 60);
             if (dis < 60) {
+#else
+            float dis = FastSonicDetect(2, SQUARE_LENGTH_CM);
+            if (dis < SQUARE_LENGTH_CM) {
+#endif
                 need_go_back = 1;
                 break;
             }
@@ -530,6 +539,12 @@ uint8_t explore_dir(const direction_t dir)
     }
 }
 
+void add_obstacle(const Waypoint nx) {
+    Scene_set_object(&ShinxScene1, nx.x, nx.y, SO_Obstacle);
+    uint8_t nn = nx.y * 4 + nx.x;
+    append_my_message(0x81, &nn, 1);
+}
+
 void autoavoid_update()
 {
     Waypoint nx;
@@ -543,25 +558,24 @@ void autoavoid_update()
                 break;
             }
             else {
-                Scene_set_object(&ShinxScene1, nx.x, nx.y, SO_Obstacle);
-                uint8_t nn = nx.y * 4 + nx.x;
-                append_my_message(0x81, &nn, 1);
+                add_obstacle(nx);
             }
 #else
             calibrateAndRotDir(i);
             float dis = FastSonicDetect(2, 200);
             if (SQUARE_LENGTH_CM / 4 < dis && dis < SQUARE_LENGTH_CM * 1.5) {
-                Scene_set_object(&ShinxScene1, nx.x, nx.y, SO_Obstacle);
-                uint8_t nn = nx.y * 4 + nx.x;
-                append_my_message(0x81, &nn, 1);
+                add_obstacle(nx);
             }
             else {
                 Scene_set_object(&ShinxScene1, nx.x, nx.y, SO_Empty);
                 es_push(nx);
                 if (dis < SQUARE_LENGTH_CM * 2.5) {
-                    Scene_set_object(&ShinxScene1, nx.x + dirx[i], nx.y + dirx[i], SO_Obstacle);
+                    nx= (Waypoint){nx.x + dirx[i], nx.y + diry[i]};
+                    if (check_valid_eq(nx, SO_Unknown)){
+                        add_obstacle(nx);
+                    }
                 } // TODO: an optimization
-                calibrateAndGoDir(i);
+                // calibrateAndGoDir(i);
             }
 #endif
         }

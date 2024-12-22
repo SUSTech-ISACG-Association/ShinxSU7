@@ -147,6 +147,7 @@ void bluetooth_RxCallback()
             proto_buffer = 0xffffffff;
             HAL_UART_Transmit(huart, (uint8_t *)&proto_buffer, 1, 0xffff);
         }
+        HAL_Delay(1);
         bluetooth_sendACK2(0x00);
         start_bluetooth_IT();
         break;
@@ -174,6 +175,25 @@ void bluetooth_RxCallback()
         start_bluetooth_IT();
         break;
         // TODO: Add handler for other codes
+    case 0x90:
+        bluetooth_sendACK1(0x00);
+        HAL_Delay(1);
+        p = find_message(0x90);
+        if (p == NULL)
+        {
+            uint8_t nn = 0xff;
+            nn = (su7state.heading << 4) | (su7state.pos.y << 2) | su7state.pos.x;
+            HAL_UART_Transmit(huart, &nn, 1, 0xffff);
+            HAL_Delay(1);
+        } else {
+            HAL_UART_Transmit(huart, p->data, p->length, 0xffff);
+            HAL_Delay(1);
+            // HAL_UART_Transmit(huart, &ctEnEl, sizeof(uint32_t), 0xffff);
+            remove_last_find_message();
+        }
+        bluetooth_sendACK2(0x00);
+        start_bluetooth_IT();
+        break;
 
     default:
         start_bluetooth_IT();
