@@ -33,12 +33,12 @@ float SonicDetect(float angle)
 }
 
 float FastSonicDetect(uint32_t times, uint32_t max_val) {
-    float max_dis = 700, t;
+    float max_dis = 0, t;
     while (times --> 0) {
         t = UltrasonicWave_StartMeasure();
         max_dis = max_dis > t ? max_dis : t;
         HAL_Delay(SONIC_MIN_INTERVAL_MS);
-        if (max_dis < max_val) {
+        if (max_dis > max_val) {
             return max_dis;
         }
     }
