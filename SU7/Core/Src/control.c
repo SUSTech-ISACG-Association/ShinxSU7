@@ -435,12 +435,14 @@ uint8_t explore_dir(const direction_t dir)
             MOTOR_SET_SPD(-(max_spd - 30), (max_spd - 20));
             HAL_Delay(EXPLORE_SPIN_MIN_TIME);
             MOTOR_FORWARD(max_spd);
+            wait = (HAL_GetTick() - tickStart) + calibratedHBlkTime;
             break;
         case 0b001:
         case 0b011:
             MOTOR_SET_SPD((max_spd - 20), -(max_spd - 30));
             HAL_Delay(EXPLORE_SPIN_MIN_TIME);
             MOTOR_FORWARD(max_spd);
+            wait = (HAL_GetTick() - tickStart) + calibratedHBlkTime;
             break;
         case 0b000:
         case 0b010:
@@ -458,8 +460,8 @@ uint8_t explore_dir(const direction_t dir)
         }
         // Ultrasonic obstruction test
         if (wait - (HAL_GetTick() - tickStart) > 250) {
-            float dis = FastSonicDetect(3, 40);
-            if (dis < 40) {
+            float dis = FastSonicDetect(2, 60);
+            if (dis < 60) {
                 need_go_back = 1;
                 break;
             }
@@ -486,6 +488,7 @@ void autoavoid_update()
     for (uint32_t i = 0; i < ld; ++i) {
         nx = (Waypoint){su7state.pos.x + dirx[i], su7state.pos.y + diry[i]};
         if (check_valid_eq(nx, SO_Unknown)) {
+#ifdef SONIC_NOT_WORKING
             if (explore_dir(i)) {
                 Scene_set_object(&ShinxScene1, nx.x, nx.y, SO_Empty);
                 es_push(nx);
@@ -496,6 +499,23 @@ void autoavoid_update()
                 uint8_t nn = nx.y * 4 + nx.x;
                 append_my_message(0x81, &nn, 1);
             }
+#else
+            calibrateAndRotDir(i);
+            float dis = FastSonicDetect(2, 200);
+            if (SQUARE_LENGTH_CM / 4 < dis && dis < SQUARE_LENGTH_CM * 1.5) {
+                Scene_set_object(&ShinxScene1, nx.x, nx.y, SO_Obstacle);
+                uint8_t nn = nx.y * 4 + nx.x;
+                append_my_message(0x81, &nn, 1);
+            }
+            else {
+                Scene_set_object(&ShinxScene1, nx.x, nx.y, SO_Empty);
+                es_push(nx);
+                if (dis < SQUARE_LENGTH_CM * 2.5) {
+                    Scene_set_object(&ShinxScene1, nx.x + dirx[i], nx.y + dirx[i], SO_Obstacle);
+                } // TODO: an optimization
+                calibrateAndGoDir(i);
+            }
+#endif
         }
     }
     if (es_head == 0) {
