@@ -56,7 +56,7 @@ void reset_states()
     waypoint_state = 0;
     waypoint_cnt = 0;
     whereami = 0;
-    facedirection = 0;
+    face_direction = 0;
     is_running = is_race = 0;
     is_setting_start = 1;
 }

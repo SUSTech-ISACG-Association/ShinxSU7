@@ -56,13 +56,13 @@ void handle_ack2(uint8_t ack2)
             HAL_UART_Receive(huart, &recv_buffer, 1, 0xffff);
             obstacles |= (1 << recv_buffer);
             updated = 1;
-            // TODO: handle obstacle position
             break;
-        case 0x91:
+        case 0x90:
             // get su7 position
-            HAL_UART_Receive(huart, &recv_buffer, 4, 0xffff);
+            HAL_UART_Receive(huart, &recv_buffer, 1, 0xffff);
             whereami = recv_buffer & 0x0F;
             face_direction = recv_buffer >> 4;
+            updated = 1;
             break;
         default:
             char warning[50];

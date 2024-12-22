@@ -367,10 +367,10 @@ int main(void)
                     }
                 }
             }
-            if (updated) {
-                drawUI();
-                updated = 0;
-            }
+        }
+        if (updated) {
+            drawUI();
+            updated = 0;
         }
     /* USER CODE END WHILE */
 
