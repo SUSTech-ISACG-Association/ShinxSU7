@@ -348,6 +348,7 @@ int main(void)
                     char buf[20];
                     sprintf(buf, is_running ? "Running" : "Stopped");
                     display_info(buf);
+                    send_start_end();
                     send_toggle_run();
                 }
                 else {
