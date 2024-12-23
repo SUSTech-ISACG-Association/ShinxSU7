@@ -7,6 +7,7 @@
 #include "motor.h"
 #include "scene.h"
 #include "sonic.h"
+#include "songs.h"
 
 SU7State_t su7state = {{0, 0}, 0};
 static int32_t dirx[4] = {0, 1, 0, -1};
@@ -563,6 +564,7 @@ void add_obstacle(const Waypoint nx)
     Scene_set_object(&ShinxScene1, nx.x, nx.y, SO_Obstacle);
     uint8_t nn = nx.y * 4 + nx.x;
     append_my_message(0x81, &nn, 1);
+    bark(261.6, 500);
 }
 
 void autopilot_update()
@@ -617,6 +619,7 @@ void autopilot_update()
     }
     if (es_head == 0) {
         safe_goto(autopilot_end);
+        play_song(HARUHIKAGE_id);
         end_mode();
         return;
     }
