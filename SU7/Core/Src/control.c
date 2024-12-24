@@ -584,7 +584,12 @@ void autopilot_update()
             }
 #else
             calibrateAndRotDir(i);
-            float dis = FastSonicDetect(2, 200);
+            // float dis = FastSonicDetect(2, 200);
+            float dis1 = SonicDetect(90);
+            float dis2 = SonicDetect(105);
+            float dis3 = SonicDetect(80);
+            float dis = dis1 < dis2 ? dis1 : dis2;
+            dis = dis < dis3 ? dis : dis3;
             if (SQUARE_LENGTH_CM / 4 < dis && dis < SQUARE_LENGTH_CM * 1.5) {
                 add_obstacle(nx);
             }
@@ -668,18 +673,20 @@ RE_UPDATE:
     case 0b100:
         race_state = TURNL;
         break;
-    case 0b101:
-        break;
     case 0b110:
         race_state = TURNL_WAITING;
         break;
     case 0b111:
-        if (race_state == TURNL) {
-            race_state = TURNR;
-        }
-        else if (race_state == TURNR) {
-            race_state = TURNL;
-        }
+    case 0b101:
+        // if (race_state == TURNL) {
+        //     race_state = TURNR;
+        // }
+        // else if (race_state == TURNR) {
+        //     race_state = TURNL;
+        // }
+        // MOTOR_BACK(max_spd);
+        // HAL_Delay(100);
+        // race_state = FOLLOWING;
         break;
 
     default:

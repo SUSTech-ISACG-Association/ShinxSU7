@@ -6,9 +6,9 @@
 #define C6F 1108.73
 #define B5 987.77
 #define E6 1318.51
-#define N1 618
-#define N12 309
-#define N14 154
+#define N1 309
+#define N12 155
+#define N14 77
 
 static float notes[1][20] = {{D6F, C6F, B5, C6F, D6F, E6, D6F, C6F, D6F, C6F, B5, C6F, D6F, E6, D6F, C6F}};
 static int durations[1][20] = {{N1, N12, N1, N12, N12+N14, N14, N12, N1+N12, N1, N12, N1, N12, N12+N14, N14, N12, N1+N12}};
